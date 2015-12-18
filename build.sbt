@@ -1,0 +1,59 @@
+import sbt.Keys._
+import com.banno.license.Plugin.LicenseKeys._
+import com.banno.license.Licenses._
+
+crossScalaVersions := Seq("2.10.6", "2.11.7")
+
+val commonSettings =
+  licenseSettings ++
+    Seq(
+      organization := "pl.touk.influxdb-reporter",
+      javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
+      scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-target:jvm-1.7"),
+      removeExistingHeaderBlock := true,
+      license := apache2("Copyright 2015"),
+      licenses :=  Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+    )
+
+lazy val core = project.in(file("core"))
+  .settings(commonSettings)
+  .settings(
+    name := "influxdb-reporter-core",
+    libraryDependencies ++= {
+      val dropwizardMetricsV = "3.1.2"
+      val scalaTestV = "2.2.5"
+
+      Seq(
+        "io.dropwizard.metrics" % "metrics-core" % dropwizardMetricsV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+      )
+    })
+
+lazy val httpClient = project.in(file("http-client"))
+  .settings(commonSettings)
+  .settings(
+    name := "influxdb-reporter-http-client",
+    libraryDependencies ++= {
+      val typesafeConfigV = "1.3.0"
+      val dispatchV = "0.11.2"
+      val scalaLogging = "2.1.2"
+
+      Seq(
+        "com.typesafe" % "config" % typesafeConfigV,
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,
+        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging
+      )
+    }
+  )
+  .dependsOn(core)
+
+lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
+  .settings(commonSettings)
+  .settings(
+    name := "influxdb-reporter-http-client-java-wrapper",
+    javacOptions in doc := Seq("-source", "1.7")
+  )
+  .dependsOn(httpClient)
+
+publish := {}
+publishLocal := {}
