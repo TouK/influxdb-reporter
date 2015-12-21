@@ -43,9 +43,9 @@ class BaseMetricTest extends WordSpec with ScalaFutures {
   type PhaseAssert = (Phase, String, List[Field], List[Tag]) => Boolean
 
   class MockMetricClient(writer: MockInfluxdbWriterWithPhaseAssertions) extends MetricClient[List[TestData]] {
-    override def sendData(data: WriterData[List[TestData]]): Future[Int] = {
+    override def sendData(data: WriterData[List[TestData]]): Future[Unit] = {
       writer.nextPhase()
-      Future.successful(200)
+      Future.successful(())
     }
   }
 

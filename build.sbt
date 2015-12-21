@@ -12,7 +12,15 @@ val commonSettings =
       scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-target:jvm-1.7"),
       removeExistingHeaderBlock := true,
       license := apache2("Copyright 2015"),
-      licenses :=  Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+      licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      isSnapshot := true,
+      publishTo := {
+        if (isSnapshot.value)
+          Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/snapshots")
+        else
+          Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/releases")
+      },
+      credentials += Credentials(Path.userHome / ".ivy2" / ".nexus_touk_pl_credentials")
     )
 
 lazy val core = project.in(file("core"))

@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter
+package influxdbreporter.javawrapper;
 
-package object core {
+import influxdbreporter.ConnectionData;
+import scala.concurrent.ExecutionContext;
+import scala.concurrent.duration.FiniteDuration;
 
-  case class Field(key: String, value: Any)
+import java.util.concurrent.TimeUnit;
 
-  case class Tag(key: String, value: Any) extends Ordered[Tag] {
-    override def compare(that: Tag): Int = this.key.compareTo(that.key)
-  }
+public class HttpInfluxdbClient {
 
+    public static influxdbreporter.HttpInfluxdbClient defaultHttpClient(ConnectionData connectionData) {
+        return new influxdbreporter.HttpInfluxdbClient(connectionData, ExecutionContext.Implicits$.MODULE$.global(),
+                new FiniteDuration(5, TimeUnit.SECONDS));
+    }
 }
