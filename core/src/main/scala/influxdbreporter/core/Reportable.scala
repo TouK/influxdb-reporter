@@ -47,29 +47,48 @@ trait StoppableReportingTask {
 abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
                                    (implicit executionContext: ExecutionContext)
   extends Reporter with Reportable[S] with LazyLogging {
+
+  @volatile private var reschedule = false
   private val scheduler = Executors.newScheduledThreadPool(1)
   private val taskJob = new Runnable {
     override def run(): Unit = {
-      try {
-        val (collectedMetrics, collectedCodehaleMetrics) = synchronized {
-          (collectMetrics(metricRegistry.getMetricsMap), collectCodehaleMetrics(metricRegistry.getCodehaleMetricsMap))
-        }
-        reportMetrics(collectedMetrics, collectedCodehaleMetrics) onComplete {
-          case Success(_) =>
-          case Failure(ex) => logger.error("Reporting error:", ex)
-        }
-      } catch {
-        case t: Throwable => logger.error("Collecting error:", t)
+      if (reschedule) {
+        reportCollectedMetricsAndRescheduleReporting(scheduleReporting())
       }
     }
   }
 
   override def start(): StoppableReportingTask = new StoppableReportingTask {
-    val reportingTask = scheduler.scheduleWithFixedDelay(taskJob, interval.toMillis, interval.toMillis, TimeUnit.MILLISECONDS)
+    if (reschedule) throw new RuntimeException("Reporter has been already started!")
+
+    reschedule = true
+    scheduleReporting()
 
     override def stop(): Unit = {
-      if (!reportingTask.isCancelled) reportingTask.cancel(true)
+      reschedule = false
     }
   }
 
+  private def scheduleReporting(): Unit = {
+    if(reschedule) scheduler.schedule(taskJob, interval.toMillis, TimeUnit.MILLISECONDS)
+  }
+
+  private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
+    try {
+      val (collectedMetrics, collectedCodehaleMetrics) = synchronized {
+        (collectMetrics(metricRegistry.getMetricsMap), collectCodehaleMetrics(metricRegistry.getCodehaleMetricsMap))
+      }
+      reportMetrics(collectedMetrics, collectedCodehaleMetrics) onComplete {
+        case Success(_) =>
+          reschedule
+        case Failure(ex) =>
+          reschedule
+          logger.error("Reporting error:", ex)
+      }
+    } catch {
+      case t: Throwable =>
+        reschedule
+        logger.error("Collecting error:", t)
+    }
+  }
 }
