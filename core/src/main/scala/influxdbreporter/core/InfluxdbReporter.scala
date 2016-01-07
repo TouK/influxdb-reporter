@@ -17,10 +17,11 @@ package influxdbreporter.core
 
 import com.codahale.metrics.Clock
 import influxdbreporter.core.collectors.MetricCollector
+import influxdbreporter.core.metrics.{MetricByTag, Metric}
 import influxdbreporter.core.metrics.Metric.CodehaleMetric
-import influxdbreporter.core.metrics.{Metric, MetricByTag}
 import influxdbreporter.core.utils.UtcClock
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 class InfluxdbReporter[S](registry: MetricRegistry,
@@ -28,12 +29,13 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           client: MetricClient[S],
                           interval: FiniteDuration,
                           clock: Clock = UtcClock)
-  extends ScheduledReporter(registry, interval) {
+                         (implicit executionContext: ExecutionContext)
+  extends ScheduledReporter[S](registry, interval) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
     new InfluxdbReporter[S](registry, writer, client, newInterval, clock)
 
-  override def reportMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Unit = {
+  override protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Option[WriterData[S]] = {
     val timestamp = clock.getTick
     reduceWriterData {
       metrics.toList.flatMap {
@@ -42,20 +44,24 @@ class InfluxdbReporter[S](registry: MetricRegistry,
             Some(collector.collect(writer, name, m, timestamp, tags: _*))
         }
       }
-    } map {
-      case data => client.sendData(data)
     }
   }
 
-  override protected def reportCodehaleMetrics[M <: CodehaleMetric](metrics: Map[String, (M, MetricCollector[M])]): Unit = {
+  override protected def collectCodehaleMetrics[M <: CodehaleMetric](metrics: Map[String, (M, MetricCollector[M])]): Option[WriterData[S]] = {
     val timestamp = clock.getTick
     reduceWriterData {
       metrics.toList.map {
         case (name, (metric, collector)) =>
           Some(collector.collect(writer, name, metric, timestamp))
       }
-    } map {
-      case data => client.sendData(data)
+    }
+  }
+
+  override protected def reportMetrics(collectedMetricsData: Option[WriterData[S]],
+                                       collectedCodehaleMetricsData: Option[WriterData[S]]): Future[Boolean] = {
+    reduceWriterData(collectedMetricsData :: collectedCodehaleMetricsData :: Nil) match {
+      case Some(data) => client.sendData(data).map(_ => true)
+      case None => Future.successful(false)
     }
   }
 

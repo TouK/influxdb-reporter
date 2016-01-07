@@ -17,35 +17,50 @@ package influxdbreporter.core
 
 import java.util.concurrent.{Executors, TimeUnit}
 
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.metrics.Metric.CodehaleMetric
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 
 trait Reporter {
 
   def start(): StoppableReportingTask
 }
 
-trait Reportable {
+trait Reportable[S] {
 
-  protected def reportMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Unit
+  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Option[WriterData[S]]
 
-  protected def reportCodehaleMetrics[M <: CodehaleMetric](metrics: Map[String, (M, MetricCollector[M])]): Unit
+  protected def collectCodehaleMetrics[M <: CodehaleMetric](metrics: Map[String, (M, MetricCollector[M])]): Option[WriterData[S]]
+
+  protected def reportMetrics(collectedMetricsData: Option[WriterData[S]], collectedCodehaleMetricsData: Option[WriterData[S]]): Future[Boolean]
 }
 
 trait StoppableReportingTask {
   def stop(): Unit
 }
 
-abstract class ScheduledReporter(metricRegistry: MetricRegistry,
-                                 interval: FiniteDuration) extends Reporter with Reportable {
+abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
+                                   (implicit executionContext: ExecutionContext)
+  extends Reporter with Reportable[S] with LazyLogging {
   private val scheduler = Executors.newScheduledThreadPool(1)
   private val taskJob = new Runnable {
-    override def run(): Unit = synchronized {
-      reportMetrics(metricRegistry.getMetricsMap)
-      reportCodehaleMetrics(metricRegistry.getCodehaleMetricsMap)
+    override def run(): Unit = {
+      try {
+        val (collectedMetrics, collectedCodehaleMetrics) = synchronized {
+          (collectMetrics(metricRegistry.getMetricsMap), collectCodehaleMetrics(metricRegistry.getCodehaleMetricsMap))
+        }
+        reportMetrics(collectedMetrics, collectedCodehaleMetrics) onComplete {
+          case Success(_) =>
+          case Failure(ex) => logger.error("Reporting error:", ex)
+        }
+      } catch {
+        case t: Throwable => logger.error("Collecting error:", t)
+      }
     }
   }
 

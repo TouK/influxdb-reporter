@@ -29,10 +29,12 @@ lazy val core = project.in(file("core"))
     name := "influxdb-reporter-core",
     libraryDependencies ++= {
       val dropwizardMetricsV = "3.1.2"
+      val scalaLogging = "2.1.2"
       val scalaTestV = "2.2.5"
 
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropwizardMetricsV,
+        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     })
@@ -44,12 +46,10 @@ lazy val httpClient = project.in(file("http-client"))
     libraryDependencies ++= {
       val typesafeConfigV = "1.3.0"
       val dispatchV = "0.11.2"
-      val scalaLogging = "2.1.2"
 
       Seq(
         "com.typesafe" % "config" % typesafeConfigV,
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,
-        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV
       )
     }
   )
