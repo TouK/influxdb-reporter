@@ -15,7 +15,7 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
@@ -40,37 +40,19 @@ trait Reportable[S] {
   protected def reportMetrics(collectedMetricsData: Option[WriterData[S]], collectedCodehaleMetricsData: Option[WriterData[S]]): Future[Boolean]
 }
 
-trait StoppableReportingTask {
-  def stop(): Unit
-}
-
 abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
                                    (implicit executionContext: ExecutionContext)
   extends Reporter with Reportable[S] with LazyLogging {
 
-  @volatile private var reschedule = false
   private val scheduler = Executors.newScheduledThreadPool(1)
-  private val taskJob = new Runnable {
+
+  override def start(): StoppableReportingTask =
+    new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+
+  private def createTaskJob(rescheduler: Reschedulable) = new Runnable {
     override def run(): Unit = {
-      if (reschedule) {
-        reportCollectedMetricsAndRescheduleReporting(scheduleReporting())
-      }
+      reportCollectedMetricsAndRescheduleReporting(rescheduler.reschedule())
     }
-  }
-
-  override def start(): StoppableReportingTask = new StoppableReportingTask {
-    if (reschedule) throw new RuntimeException("Reporter has been already started!")
-
-    reschedule = true
-    scheduleReporting()
-
-    override def stop(): Unit = {
-      reschedule = false
-    }
-  }
-
-  private def scheduleReporting(): Unit = {
-    if(reschedule) scheduler.schedule(taskJob, interval.toMillis, TimeUnit.MILLISECONDS)
   }
 
   private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
@@ -91,4 +73,34 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
         logger.error("Collecting error:", t)
     }
   }
+}
+
+trait StoppableReportingTask {
+  def stop(): Unit
+}
+
+trait Reschedulable {
+  def reschedule(): Unit
+}
+
+private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecutorService,
+                                                     createTask: Reschedulable => Runnable,
+                                                     delay: FiniteDuration)
+  extends StoppableReportingTask with Reschedulable {
+
+  private val task = createTask(this)
+  @volatile private var isStopped = false
+  @volatile private var currentScheduledTask = scheduleNextTask()
+
+  override def stop(): Unit = {
+    isStopped = true
+    if(!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
+  }
+
+  override def reschedule(): Unit = if (!isStopped) {
+    currentScheduledTask = scheduleNextTask()
+  }
+
+  private def scheduleNextTask() =
+    scheduler.schedule(task, delay.toMillis, TimeUnit.MILLISECONDS)
 }
