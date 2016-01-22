@@ -29,6 +29,7 @@ object Metric {
   type CodehaleCounter = com.codahale.metrics.Counter
   type CodehaleHistogram = com.codahale.metrics.Histogram
   type CodehaleMeter = com.codahale.metrics.Meter
+  type CodehaleGauge[T] = com.codahale.metrics.Gauge[T]
   type CodehaleTimer = com.codahale.metrics.Timer
 }
 

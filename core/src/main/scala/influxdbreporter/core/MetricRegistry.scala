@@ -98,8 +98,6 @@ trait RegisterMagnet[T] {
 
 object RegisterMagnet {
 
-  import CollectorOps._
-
   private val registerMagnetForCounters = new RegisterMagnetFromMetric[Counter, CodehaleCounter]
   private val registerMagnetForCodehaleCounters = new RegisterMagnetFromCodehaleMetric[CodehaleCounter]
   private val registerMagnetForHistogram = new RegisterMagnetFromMetric[Histogram, CodehaleHistogram]
@@ -127,6 +125,10 @@ object RegisterMagnet {
   RegisterMagnet[CodehaleCounter] = {
     val (counter, collector) = counterAndCollector
     registerMagnetForCodehaleCounters(counter, Some(collector))
+  }
+
+  implicit def discreteGaugeToRegisterMagnet[T](gauge: DiscreteGauge[T]): RegisterMagnet[DiscreteGauge[T]] = {
+    (new RegisterMagnetFromMetric[DiscreteGauge[T], Gauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
   }
 
   implicit def gaugeToRegisterMagnet[T](gauge: Gauge[T]): RegisterMagnet[Gauge[T]] = {
