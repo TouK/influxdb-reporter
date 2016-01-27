@@ -15,12 +15,12 @@
  */
 package influxdbreporter.core.metrics
 
-import Metric.CodehaleMeter
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric.CodehaleMeter
 
 import scala.annotation.varargs
 
-class Meter extends TagRelatedMetric[CodehaleMeter] with Metric[CodehaleMeter] {
+class Meter extends TagRelatedMetric[CodehaleMeter] {
 
   override protected def createMetric(): CodehaleMeter = new CodehaleMeter()
 

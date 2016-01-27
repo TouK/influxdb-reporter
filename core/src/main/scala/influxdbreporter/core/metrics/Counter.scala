@@ -15,12 +15,12 @@
  */
 package influxdbreporter.core.metrics
 
-import Metric._
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric._
 
 import scala.annotation.varargs
 
-class Counter extends TagRelatedMetric[CodehaleCounter] with Metric[CodehaleCounter] {
+class Counter extends TagRelatedMetric[CodehaleCounter] {
 
   @varargs def inc(tags: Tag*): Unit = increaseMetric(tags.toList, _.inc(1))
 

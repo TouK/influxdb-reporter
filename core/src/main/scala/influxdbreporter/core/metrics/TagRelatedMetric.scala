@@ -18,13 +18,13 @@ package influxdbreporter.core.metrics
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
-import Metric.CodehaleMetric
+import influxdbreporter.core.metrics.Metric._
 import MetricByTag.{InfluxdbTags, MetricByTags}
 
 import scala.collection.JavaConverters._
 
 // T must be thread safe
-private[metrics] abstract class TagRelatedMetric[T <: CodehaleMetric] {
+private[metrics] abstract class TagRelatedMetric[T <: CodehaleMetric] extends Metric[T] {
 
   type MetricAction[M <: CodehaleMetric] = M => Unit
 
@@ -42,7 +42,7 @@ private[metrics] abstract class TagRelatedMetric[T <: CodehaleMetric] {
     }
   }
 
-  def popMetrics: MetricByTags[T] = {
+  override def popMetrics: MetricByTags[T] = {
     val snapshot = metricByTags.getAndSet(new ConcurrentHashMap[OrderIndependentList, T]())
     snapshot.asScala.toList.map {
       case (tagsWrapper, metric) => MetricByTag(tagsWrapper.tags, metric)

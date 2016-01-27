@@ -15,14 +15,13 @@
  */
 package influxdbreporter.core.metrics
 
-import com.codahale.metrics.{Reservoir, ExponentiallyDecayingReservoir}
-import Metric.CodehaleHistogram
+import com.codahale.metrics.{ExponentiallyDecayingReservoir, Reservoir}
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric.CodehaleHistogram
 
 import scala.annotation.varargs
 
-
-class Histogram(reservoir: Reservoir) extends TagRelatedMetric[CodehaleHistogram] with Metric[CodehaleHistogram]{
+class Histogram(reservoir: Reservoir) extends TagRelatedMetric[CodehaleHistogram] {
   def this() = this(new ExponentiallyDecayingReservoir)
 
   override protected def createMetric(): CodehaleHistogram = new CodehaleHistogram(reservoir)

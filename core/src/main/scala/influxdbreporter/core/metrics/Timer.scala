@@ -18,8 +18,8 @@ package influxdbreporter.core.metrics
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.Clock
-import Metric._
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric._
 
 import scala.annotation.varargs
 
@@ -27,7 +27,7 @@ sealed trait TimerContext {
   def stop()
 }
 
-class Timer extends TagRelatedMetric[CodehaleTimer] with Metric[CodehaleTimer] {
+class Timer extends TagRelatedMetric[CodehaleTimer] {
 
   @varargs def time(tags: Tag*): TimerContext = new InfluxTimerContextImpl(tags.toList, this)
 
