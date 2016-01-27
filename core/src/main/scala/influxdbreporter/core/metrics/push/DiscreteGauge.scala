@@ -24,6 +24,7 @@ import influxdbreporter.core.metrics.MetricByTag._
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.{Future, ExecutionContext}
 
 class DiscreteGauge[T] extends Metric[CodehaleGauge[T]] {
 
@@ -36,8 +37,8 @@ class DiscreteGauge[T] extends Metric[CodehaleGauge[T]] {
     metricByTags.get().add(MetricByTag(tags.toList, newMetric))
   }
 
-  override def popMetrics: MetricByTags[CodehaleGauge[T]] = {
+  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodehaleGauge[T]]] = {
     val snapshot = metricByTags.getAndSet(new ConcurrentLinkedQueue[MetricByTag[CodehaleGauge[T]]]())
-    snapshot.asScala.toList
+    Future.successful(snapshot.asScala.toList)
   }
 }

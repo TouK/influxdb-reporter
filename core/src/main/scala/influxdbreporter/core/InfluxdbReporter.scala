@@ -35,16 +35,17 @@ class InfluxdbReporter[S](registry: MetricRegistry,
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
     new InfluxdbReporter[S](registry, writer, client, newInterval, clock)
 
-  override protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Option[WriterData[S]] = {
+  override protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[Option[WriterData[S]]] = {
     val timestamp = clock.getTick
-    reduceWriterData {
-      metrics.toList.flatMap {
-        case (name, (metric, collector)) => metric.popMetrics.map {
-          case MetricByTag(tags, m) =>
-            collector.collect(writer, name, m, timestamp, tags: _*)
+    Future.sequence(metrics.toList.map {
+      case (name, (metric, collector)) =>
+        metric.popMetrics.map {
+          _.map {
+            case MetricByTag(tags, m) =>
+              collector.collect(writer, name, m, timestamp, tags: _*)
+          }
         }
-      }
-    }
+    }).map(listOfLists => reduceWriterData(listOfLists.flatten))
   }
 
   override protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean] = {

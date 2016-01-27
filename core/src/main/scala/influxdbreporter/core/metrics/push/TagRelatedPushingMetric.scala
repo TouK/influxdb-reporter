@@ -23,6 +23,7 @@ import influxdbreporter.core.metrics.MetricByTag.{InfluxdbTags, MetricByTags}
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
 
 // T must be thread safe
 private[metrics] abstract class TagRelatedPushingMetric[T <: CodehaleMetric] extends Metric[T] {
@@ -43,11 +44,11 @@ private[metrics] abstract class TagRelatedPushingMetric[T <: CodehaleMetric] ext
     }
   }
 
-  override def popMetrics: MetricByTags[T] = {
+  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]] = {
     val snapshot = metricByTags.getAndSet(new ConcurrentHashMap[OrderIndependentList, T]())
-    snapshot.asScala.toList.map {
+    Future.successful(snapshot.asScala.toList.map {
       case (tagsWrapper, metric) => MetricByTag(tagsWrapper.tags, metric)
-    }
+    })
   }
 
   private case class OrderIndependentList(tags: InfluxdbTags) {

@@ -106,7 +106,7 @@ object RegisterMagnet {
     (new RegisterMagnetFromMetric[DiscreteGauge[T], Gauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
   }
 
-  implicit def discreteGaugeToRegisterMagnet[T](gauge: PullingGauge[T]): RegisterMagnet[PullingGauge[T]] = {
+  implicit def pullingGaugeToRegisterMagnet[T](gauge: PullingGauge[T]): RegisterMagnet[PullingGauge[T]] = {
     (new RegisterMagnetFromMetric[PullingGauge[T], Gauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
   }
 

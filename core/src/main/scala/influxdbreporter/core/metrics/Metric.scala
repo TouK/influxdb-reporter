@@ -19,9 +19,11 @@ import Metric.CodehaleMetric
 import MetricByTag.{InfluxdbTags, MetricByTags}
 import influxdbreporter.core.Tag
 
+import scala.concurrent.{ExecutionContext, Future}
+
 trait Metric[T <: CodehaleMetric] {
 
-  def popMetrics: MetricByTags[T]
+  def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]]
 }
 
 object Metric {

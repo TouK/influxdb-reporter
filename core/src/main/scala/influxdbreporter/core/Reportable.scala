@@ -33,7 +33,7 @@ trait Reporter {
 
 trait Reportable[S] {
 
-  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Option[WriterData[S]]
+  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[Option[WriterData[S]]]
 
   protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean]
 }
@@ -55,10 +55,14 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
 
   private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
     try {
-      val collectedMetrics = synchronized {
+      val collectedMetricsFuture = synchronized {
         collectMetrics(metricRegistry.getMetricsMap)
       }
-      reportMetrics(collectedMetrics) onComplete {
+      val reportedFuture = for {
+        collectedMetrics <- collectedMetricsFuture
+        reported <- reportMetrics(collectedMetrics)
+      } yield reported
+      reportedFuture.onComplete {
         case Success(_) =>
           reschedule
         case Failure(ex) =>
