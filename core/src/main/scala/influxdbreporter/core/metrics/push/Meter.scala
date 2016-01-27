@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
 import influxdbreporter.core.Tag
-import influxdbreporter.core.metrics.Metric._
+import influxdbreporter.core.metrics.Metric.CodehaleMeter
 
 import scala.annotation.varargs
 
-class Counter extends TagRelatedMetric[CodehaleCounter] {
+class Meter extends TagRelatedPushingMetric[CodehaleMeter] {
 
-  @varargs def inc(tags: Tag*): Unit = increaseMetric(tags.toList, _.inc(1))
+  override protected def createMetric(): CodehaleMeter = new CodehaleMeter()
 
-  @varargs def inc(n: Long, tags: Tag*): Unit = increaseMetric(tags.toList, _.inc(n))
+  @varargs def mark(tags: Tag*): Unit = mark(1L, tags: _*)
 
-  @varargs def dec(tags: Tag*): Unit = increaseMetric(tags.toList, _.dec(1))
-
-  @varargs def dec(n: Long, tags: Tag*): Unit = increaseMetric(tags.toList, _.dec(n))
-
-  override protected def createMetric(): CodehaleCounter = new CodehaleCounter
+  @varargs def mark(n: Long,tags: Tag*): Unit = increaseMetric(tags.toList, _.mark(n))
 }

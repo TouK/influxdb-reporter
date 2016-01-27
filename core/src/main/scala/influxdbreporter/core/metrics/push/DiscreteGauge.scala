@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference
 import influxdbreporter.core.Tag
 import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.metrics.MetricByTag._
+import influxdbreporter.core.metrics.{Metric, MetricByTag}
 
 import scala.collection.JavaConverters._
 

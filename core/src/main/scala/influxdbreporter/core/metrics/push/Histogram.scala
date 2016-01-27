@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
 import com.codahale.metrics.{ExponentiallyDecayingReservoir, Reservoir}
 import influxdbreporter.core.Tag
@@ -21,7 +21,7 @@ import influxdbreporter.core.metrics.Metric.CodehaleHistogram
 
 import scala.annotation.varargs
 
-class Histogram(reservoir: Reservoir) extends TagRelatedMetric[CodehaleHistogram] {
+class Histogram(reservoir: Reservoir) extends TagRelatedPushingMetric[CodehaleHistogram] {
   def this() = this(new ExponentiallyDecayingReservoir)
 
   override protected def createMetric(): CodehaleHistogram = new CodehaleHistogram(reservoir)

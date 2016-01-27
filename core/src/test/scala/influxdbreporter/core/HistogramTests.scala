@@ -16,7 +16,8 @@
 package influxdbreporter.core
 
 import java.util.concurrent.TimeUnit
-import influxdbreporter.core.metrics.Histogram
+
+import influxdbreporter.core.metrics.push.Histogram
 
 import scala.concurrent.duration.FiniteDuration
 

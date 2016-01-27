@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 import influxdbreporter.core.metrics.Metric._
-import MetricByTag.{InfluxdbTags, MetricByTags}
+import influxdbreporter.core.metrics.MetricByTag.{InfluxdbTags, MetricByTags}
+import influxdbreporter.core.metrics.{Metric, MetricByTag}
 
 import scala.collection.JavaConverters._
 
 // T must be thread safe
-private[metrics] abstract class TagRelatedMetric[T <: CodehaleMetric] extends Metric[T] {
+private[metrics] abstract class TagRelatedPushingMetric[T <: CodehaleMetric] extends Metric[T] {
 
   type MetricAction[M <: CodehaleMetric] = M => Unit
 

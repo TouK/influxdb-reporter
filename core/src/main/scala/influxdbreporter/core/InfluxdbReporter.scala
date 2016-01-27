@@ -41,41 +41,27 @@ class InfluxdbReporter[S](registry: MetricRegistry,
       metrics.toList.flatMap {
         case (name, (metric, collector)) => metric.popMetrics.map {
           case MetricByTag(tags, m) =>
-            Some(collector.collect(writer, name, m, timestamp, tags: _*))
+            collector.collect(writer, name, m, timestamp, tags: _*)
         }
       }
     }
   }
 
-  override protected def collectCodehaleMetrics[M <: CodehaleMetric](metrics: Map[String, (M, MetricCollector[M])]): Option[WriterData[S]] = {
-    val timestamp = clock.getTick
-    reduceWriterData {
-      metrics.toList.map {
-        case (name, (metric, collector)) =>
-          Some(collector.collect(writer, name, metric, timestamp))
-      }
+  override protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean] = {
+    collectedMetricsData match {
+      case Some(data) =>
+        client.sendData(data).map(_ => true)
+      case None =>
+        Future.successful(false)
     }
   }
 
-  override protected def reportMetrics(collectedMetricsData: Option[WriterData[S]],
-                                       collectedCodehaleMetricsData: Option[WriterData[S]]): Future[Boolean] = {
-    reduceWriterData(collectedMetricsData :: collectedCodehaleMetricsData :: Nil) match {
-      case Some(data) => client.sendData(data).map(_ => true)
-      case None => Future.successful(false)
-    }
-  }
-
-  private def reduceWriterData(writerData: List[Option[WriterData[S]]]): Option[WriterData[S]] = {
+  private def reduceWriterData(writerData: List[WriterData[S]]): Option[WriterData[S]] = {
     writerData match {
-      case Nil => None
-      case x :: Nil => x
+      case Nil =>
+        None
       case list =>
-        list.reduce[Option[WriterData[S]]] {
-          case (Some(wr1: WriterData[S]), Some(wr2: WriterData[S])) => Some(wr1 + wr2)
-          case (None, Some(wr: WriterData[S])) => Some(wr)
-          case (Some(wr: WriterData[S]), None) => Some(wr)
-          case (None, None) => None
-        }
+        Some(list.reduce(_ + _))
     }
   }
 
