@@ -28,8 +28,8 @@ abstract class PullingGauge[V] extends Metric[CodehaleGauge[V]] {
       _.map {
         case ValueByTag(tags, value) =>
           MetricByTag[CodehaleGauge[V]](tags, new Gauge[V] {
-          override def getValue: V = value
-        })
+            override def getValue: V = value
+          })
       }
     }
 
