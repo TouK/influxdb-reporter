@@ -30,7 +30,7 @@ abstract class PullingCachedGauge[V] protected (clock: Clock,
 
   private val timeoutNS = timeoutUnit.toNanos(timeout)
 
-  @volatile private var value: List[ValueByTag[V]] = _
+  @volatile private var valueFuture: Future[List[ValueByTag[V]]] = _
 
   protected def this(timeout: Long, timeoutUnit: TimeUnit) {
     this(Clock.defaultClock(), timeout, timeoutUnit)
@@ -40,21 +40,15 @@ abstract class PullingCachedGauge[V] protected (clock: Clock,
 
   override def getValues(implicit ec: ExecutionContext): Future[List[ValueByTag[V]]] = {
     if (shouldLoad()) {
-      val loadFuture = loadValue()
-      loadFuture.onSuccess {
-        case loadedValues =>
-          this.value = loadedValues
-      }
-      loadFuture
-    } else {
-      Future.successful(value)
+      valueFuture = loadValue()
     }
+    valueFuture
   }
 
   private def shouldLoad(): Boolean = {
     val time = clock.getTick
     val current = reloadAt.get
-    current <= time && reloadAt.compareAndSet(current, time + timeoutNS)
+    time > current && reloadAt.compareAndSet(current, time + timeoutNS)
   }
 
 }
