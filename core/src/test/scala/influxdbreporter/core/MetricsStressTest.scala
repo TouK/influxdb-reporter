@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import influxdbreporter.core.collectors.{CounterCollector, MeterCollector, MetricCollector, SecondTimerCollector}
 import influxdbreporter.core.metrics.Metric.{CodehaleCounter, CodehaleMeter, CodehaleMetric, CodehaleTimer}
-import influxdbreporter.core.metrics.{Counter, Meter, Metric, Timer}
+import influxdbreporter.core.metrics.push.{Counter, Timer, Meter}
+import influxdbreporter.core.metrics.Metric
 import org.scalatest.WordSpec
 import org.scalatest.concurrent.AsyncAssertions.Waiter
 import org.scalatest.concurrent.ScalaFutures

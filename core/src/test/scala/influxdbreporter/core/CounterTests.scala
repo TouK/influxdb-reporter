@@ -17,7 +17,7 @@ package influxdbreporter.core
 
 import java.util.concurrent.TimeUnit
 
-import influxdbreporter.core.metrics.Counter
+import influxdbreporter.core.metrics.push.Counter
 
 import scala.concurrent.duration.FiniteDuration
 

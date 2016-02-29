@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.pull
 
-import com.codahale.metrics.{Reservoir, ExponentiallyDecayingReservoir}
-import Metric.CodehaleHistogram
-import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.{MetricByTag, Metric}
+import influxdbreporter.core.metrics.Metric.CodehaleMetric
+import influxdbreporter.core.metrics.MetricByTag.MetricByTags
 
-import scala.annotation.varargs
+import scala.concurrent.{ExecutionContext, Future}
 
+class PullingCodehaleMetric[T <: CodehaleMetric](underlying: T) extends Metric[T] {
 
-class Histogram(reservoir: Reservoir) extends TagRelatedMetric[CodehaleHistogram] with Metric[CodehaleHistogram]{
-  def this() = this(new ExponentiallyDecayingReservoir)
+  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]] = {
+    Future.successful(List(MetricByTag(List.empty, underlying)))
+  }
 
-  override protected def createMetric(): CodehaleHistogram = new CodehaleHistogram(reservoir)
-
-  @varargs def update(n: Long, tags: Tag*): Unit = increaseMetric(tags.toList, _.update(n))
 }

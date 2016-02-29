@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
-import Metric.CodehaleMeter
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric.CodehaleMeter
 
 import scala.annotation.varargs
 
-class Meter extends TagRelatedMetric[CodehaleMeter] with Metric[CodehaleMeter] {
+class Meter extends TagRelatedPushingMetric[CodehaleMeter] {
 
   override protected def createMetric(): CodehaleMeter = new CodehaleMeter()
 
