@@ -32,17 +32,20 @@ object HttpInfluxdbReporter {
 
   def default(config: Config, registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Reporter = {
+    // Can't use config.getDuration because of java 7 restriction
+    val interval = FiniteDuration(config.getLong("intervalSeconds"), TimeUnit.SECONDS)
+    implicit val timeout = interval - FiniteDuration(1, TimeUnit.SECONDS)
     new InfluxdbReporter[String](
       registry,
       LineProtocolWriter,
-      new HttpInfluxdbClient(
+      new HttpInfluxdbClient(ConnectionData(
         config.getString("address"),
         config.getInt("port"),
         config.getString("db-name"),
         config.getString("user"),
         config.getString("password")
-      ),
-      FiniteDuration(config.getLong("intervalSeconds"), TimeUnit.SECONDS) // Can't use config.getDuration because of java 7 restriction
+      )),
+      interval
     )
   }
 }

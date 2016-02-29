@@ -15,46 +15,94 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
 
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.metrics.Metric.CodehaleMetric
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 
 trait Reporter {
 
   def start(): StoppableReportingTask
 }
 
-trait Reportable {
+trait Reportable[S] {
 
-  protected def reportMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Unit
+  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[Option[WriterData[S]]]
 
-  protected def reportCodehaleMetrics[M <: CodehaleMetric](metrics: Map[String, (M, MetricCollector[M])]): Unit
+  protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean]
+}
+
+abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
+                                   (implicit executionContext: ExecutionContext)
+  extends Reporter with Reportable[S] with LazyLogging {
+
+  private val scheduler = Executors.newScheduledThreadPool(1)
+
+  override def start(): StoppableReportingTask =
+    new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+
+  private def createTaskJob(rescheduler: Reschedulable) = new Runnable {
+    override def run(): Unit = {
+      reportCollectedMetricsAndRescheduleReporting(rescheduler.reschedule())
+    }
+  }
+
+  private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
+    try {
+      val collectedMetricsFuture = synchronized {
+        collectMetrics(metricRegistry.getMetricsMap)
+      }
+      val reportedFuture = for {
+        collectedMetrics <- collectedMetricsFuture
+        reported <- reportMetrics(collectedMetrics)
+      } yield reported
+      reportedFuture.onComplete {
+        case Success(_) =>
+          reschedule
+        case Failure(ex) =>
+          reschedule
+          logger.error("Reporting error:", ex)
+      }
+    } catch {
+      case t: Throwable =>
+        reschedule
+        logger.error("Collecting error:", t)
+    }
+  }
 }
 
 trait StoppableReportingTask {
   def stop(): Unit
 }
 
-abstract class ScheduledReporter(metricRegistry: MetricRegistry,
-                                 interval: FiniteDuration) extends Reporter with Reportable {
-  private val scheduler = Executors.newScheduledThreadPool(1)
-  private val taskJob = new Runnable {
-    override def run(): Unit = synchronized {
-      reportMetrics(metricRegistry.getMetricsMap)
-      reportCodehaleMetrics(metricRegistry.getCodehaleMetricsMap)
-    }
+trait Reschedulable {
+  def reschedule(): Unit
+}
+
+private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecutorService,
+                                                     createTask: Reschedulable => Runnable,
+                                                     delay: FiniteDuration)
+  extends StoppableReportingTask with Reschedulable {
+
+  private val task = createTask(this)
+  @volatile private var isStopped = false
+  @volatile private var currentScheduledTask = scheduleNextTask()
+
+  override def stop(): Unit = {
+    isStopped = true
+    if(!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
   }
 
-  override def start(): StoppableReportingTask = new StoppableReportingTask {
-    val reportingTask = scheduler.scheduleWithFixedDelay(taskJob, interval.toMillis, interval.toMillis, TimeUnit.MILLISECONDS)
-
-    override def stop(): Unit = {
-      if (!reportingTask.isCancelled) reportingTask.cancel(true)
-    }
+  override def reschedule(): Unit = if (!isStopped) {
+    currentScheduledTask = scheduleNextTask()
   }
 
+  private def scheduleNextTask() =
+    scheduler.schedule(task, delay.toMillis, TimeUnit.MILLISECONDS)
 }

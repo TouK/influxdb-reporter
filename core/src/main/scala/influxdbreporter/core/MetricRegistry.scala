@@ -15,10 +15,11 @@
  */
 package influxdbreporter.core
 
-import com.codahale.metrics.Gauge
 import influxdbreporter.core.collectors.{CollectorOps, MetricCollector}
 import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.metrics._
+import influxdbreporter.core.metrics.pull.PullingCodehaleMetric
+import influxdbreporter.core.metrics.push._
 
 import scala.collection.concurrent.TrieMap
 
@@ -30,7 +31,6 @@ trait MetricRegistry {
 
   def getMetricsMap: Map[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])]
 
-  def getCodehaleMetricsMap: Map[String, (CodehaleMetric, MetricCollector[CodehaleMetric])]
 }
 
 object MetricRegistry {
@@ -39,23 +39,9 @@ object MetricRegistry {
 
 private class MetricRegistryImpl(prefix: String) extends MetricRegistry {
 
-  private val metrics = TrieMap[String, (Object, MetricCollector[CodehaleMetric])]()
+  private val metrics = TrieMap[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])]()
 
-  def getMetricsMap: Map[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])] =
-    metrics.flatMap {
-      case (name, (metric: Metric[_], collector)) =>
-        Some((name, (metric.asInstanceOf[Metric[CodehaleMetric]], collector)))
-      case _ =>
-        None
-    }.toMap
-
-  override def getCodehaleMetricsMap: Map[String, (CodehaleMetric, MetricCollector[CodehaleMetric])] =
-    metrics.flatMap {
-      case (name, (metric: CodehaleMetric, collector)) =>
-        Some((name, (metric.asInstanceOf[CodehaleMetric], collector)))
-      case _ =>
-        None
-    }.toMap
+  def getMetricsMap: Map[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])] = metrics.toMap
 
   override def register[T](metricName: String, magnet: RegisterMagnet[T]): T = magnet(metricName, this)
 
@@ -64,18 +50,6 @@ private class MetricRegistryImpl(prefix: String) extends MetricRegistry {
     val previouslyRegisteredMetric = metrics.putIfAbsent(
       metricName,
       (metric.asInstanceOf[Metric[CodehaleMetric]], collector.asInstanceOf[MetricCollector[CodehaleMetric]])
-    )
-    if (previouslyRegisteredMetric.isDefined)
-      throw new IllegalArgumentException(s"Can't register metric. There is already defined metric for $metricName")
-    else
-      metric
-  }
-
-  def registerCodehaleMetricWithCollector[T <: CodehaleMetric](name: String, metric: T, collector: MetricCollector[T]): T = {
-    val metricName = createMetricName(name)
-    val previouslyRegisteredMetric = metrics.putIfAbsent(
-      metricName,
-      (metric.asInstanceOf[CodehaleMetric], collector.asInstanceOf[MetricCollector[CodehaleMetric]])
     )
     if (previouslyRegisteredMetric.isDefined)
       throw new IllegalArgumentException(s"Can't register metric. There is already defined metric for $metricName")
@@ -97,8 +71,6 @@ trait RegisterMagnet[T] {
 }
 
 object RegisterMagnet {
-
-  import CollectorOps._
 
   private val registerMagnetForCounters = new RegisterMagnetFromMetric[Counter, CodehaleCounter]
   private val registerMagnetForCodehaleCounters = new RegisterMagnetFromCodehaleMetric[CodehaleCounter]
@@ -129,14 +101,18 @@ object RegisterMagnet {
     registerMagnetForCodehaleCounters(counter, Some(collector))
   }
 
-  implicit def gaugeToRegisterMagnet[T](gauge: Gauge[T]): RegisterMagnet[Gauge[T]] = {
-    (new RegisterMagnetFromCodehaleMetric[Gauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
+  implicit def pullingGaugeToRegisterMagnet[T](gauge: Metric[CodehaleGauge[T]]): RegisterMagnet[Metric[CodehaleGauge[T]]] = {
+    (new RegisterMagnetFromMetric[Metric[CodehaleGauge[T]], CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
   }
 
-  implicit def gaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (Gauge[T], MetricCollector[Gauge[T]])):
-  RegisterMagnet[Gauge[T]] = {
+  implicit def gaugeToRegisterMagnet[T](gauge: CodehaleGauge[T]): RegisterMagnet[CodehaleGauge[T]] = {
+    (new RegisterMagnetFromCodehaleMetric[CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
+  }
+
+  implicit def gaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (CodehaleGauge[T], MetricCollector[CodehaleGauge[T]])):
+  RegisterMagnet[CodehaleGauge[T]] = {
     val (gauge, collector) = gaugeAndCollector
-    (new RegisterMagnetFromCodehaleMetric[Gauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge, Some(collector))
+    (new RegisterMagnetFromCodehaleMetric[CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge, Some(collector))
   }
 
   implicit def influxHistogramToRegisterMagnet(histogram: Histogram): RegisterMagnet[Histogram] = {
@@ -212,8 +188,10 @@ object RegisterMagnet {
 
     def apply(metric: T, collector: Option[MetricCollector[T]] = None): RegisterMagnet[T] =
       new RegisterMagnet[T] {
-        override def apply(metricName: String, registryImpl: MetricRegistryImpl): T =
-          registryImpl.registerCodehaleMetricWithCollector(metricName, metric, collector.getOrElse(co.collector))
+        override def apply(metricName: String, registryImpl: MetricRegistryImpl): T = {
+          registryImpl.registerMetricWithCollector(metricName, new PullingCodehaleMetric(metric), collector.getOrElse(co.collector))
+          metric
+        }
       }
   }
 

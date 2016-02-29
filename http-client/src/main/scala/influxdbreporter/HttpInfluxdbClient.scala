@@ -20,40 +20,52 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import dispatch.{Http, Req, url}
 import influxdbreporter.core.{MetricClient, WriterData}
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class HttpInfluxdbClient(address: String, port: Int, dbName: String, user: String, password: String)
-                      (implicit executionContext: ExecutionContext)
+class HttpInfluxdbClient(connectionData: ConnectionData)
+                        (implicit executionContext: ExecutionContext, requestTimeout: FiniteDuration)
   extends MetricClient[String] with LazyLogging {
 
+  private val MaxConnections = 5
+  private val LoadEncoding = "UTF-8"
   private val InfluxSuccessStatusCode = 204
-  private val influxdbWriteUrl = url(s"http://$address:$port/write")
-    .addQueryParameter("db", dbName)
-    .addQueryParameter("u", user)
-    .addQueryParameter("p", password)
 
-  override def sendData(writerData: WriterData[String]): Future[Int] = {
+  private val influxdbWriteUrl = url(s"http://${connectionData.address}:${connectionData.port}/write")
+    .addQueryParameter("db", connectionData.dbName)
+    .addQueryParameter("u", connectionData.user)
+    .addQueryParameter("p", connectionData.password)
+
+  override def sendData(writerData: WriterData[String]): Future[Unit] = {
     val influxData = writerData.data
-    val request: Req = influxdbWriteUrl.POST.setBody(influxData.getBytes("UTF-8"))
-    logResult {
+    val request: Req = influxdbWriteUrl.POST.setBody(influxData.getBytes(LoadEncoding))
+    logRequestResponse(request) {
       httpClient(request > (response => response))
-    }.map(_.getStatusCode)
+    }.map(_ => ())
   }
 
   // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
   private lazy val httpClient = Http().configure(builder =>
     builder.setAllowPoolingConnection(true)
-      .setMaximumConnectionsPerHost(1)
-      .setMaximumConnectionsTotal(1)
+      .setMaximumConnectionsPerHost(MaxConnections)
+      .setMaximumConnectionsTotal(MaxConnections)
+      .setRequestTimeoutInMs(requestTimeout.toMillis.toInt)
   )
 
-  private def logResult: (Future[Response] => Future[Response]) = result => {
+  private def logRequestResponse(request: Req): (Future[Response] => Future[Response]) = result => {
+    def requestBodyToString(req: Req) = new String(req.toRequest.getByteData, LoadEncoding)
     result onComplete {
-      case Success(response) if response.getStatusCode == InfluxSuccessStatusCode => logger.info("Data was sent and successfully written")
-      case Success(response) => logger.warn(s"Influxdb cannot handle request with metrics: [${response.getResponseBody}]")
-      case Failure(ex) => logger.error("Influxdb cannot handle request with metrics:", ex)
+      case Success(response) if response.getStatusCode == InfluxSuccessStatusCode =>
+        logger.info(s"Data was sent and successfully written")
+      case Success(response) =>
+        logger.warn(s"Request: ${request.toRequest} body:\n${requestBodyToString(request)}\n" +
+          s"Influxdb cannot handle request with metrics: status=[${response.getStatusCode}] msg=[${response.getResponseBody}]")
+      case Failure(ex) =>
+        logger.error(s"Request: ${request.toRequest} body:\n${requestBodyToString(request)}\nInfluxdb cannot handle request with metrics:", ex)
     }
     result
   }
 }
+
+case class ConnectionData(address: String, port: Int, dbName: String, user: String, password: String)

@@ -13,18 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core
 
-import Metric.CodehaleMeter
-import influxdbreporter.core.Tag
-
-import scala.annotation.varargs
-
-class Meter extends TagRelatedMetric[CodehaleMeter] with Metric[CodehaleMeter] {
-
-  override protected def createMetric(): CodehaleMeter = new CodehaleMeter()
-
-  @varargs def mark(tags: Tag*): Unit = mark(1L, tags: _*)
-
-  @varargs def mark(n: Long,tags: Tag*): Unit = increaseMetric(tags.toList, _.mark(n))
-}
+case class Field(key: String, value: Any)

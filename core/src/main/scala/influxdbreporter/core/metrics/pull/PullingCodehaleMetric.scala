@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter
+package influxdbreporter.core.metrics.pull
 
-package object core {
+import influxdbreporter.core.metrics.{MetricByTag, Metric}
+import influxdbreporter.core.metrics.Metric.CodehaleMetric
+import influxdbreporter.core.metrics.MetricByTag.MetricByTags
 
-  case class Field(key: String, value: Any)
+import scala.concurrent.{ExecutionContext, Future}
 
-  case class Tag(key: String, value: Any) extends Ordered[Tag] {
-    override def compare(that: Tag): Int = this.key.compareTo(that.key)
+class PullingCodehaleMetric[T <: CodehaleMetric](underlying: T) extends Metric[T] {
+
+  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]] = {
+    Future.successful(List(MetricByTag(List.empty, underlying)))
   }
 
 }

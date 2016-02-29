@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.Clock
-import Metric._
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric._
 
 import scala.annotation.varargs
 
@@ -27,7 +27,7 @@ sealed trait TimerContext {
   def stop()
 }
 
-class Timer extends TagRelatedMetric[CodehaleTimer] with Metric[CodehaleTimer] {
+class Timer extends TagRelatedPushingMetric[CodehaleTimer] {
 
   @varargs def time(tags: Tag*): TimerContext = new InfluxTimerContextImpl(tags.toList, this)
 

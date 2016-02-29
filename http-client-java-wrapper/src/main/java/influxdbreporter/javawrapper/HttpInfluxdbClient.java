@@ -15,26 +15,16 @@
  */
 package influxdbreporter.javawrapper;
 
-import influxdbreporter.core.LineProtocolWriter$;
-import influxdbreporter.core.MetricClient;
-import influxdbreporter.core.StoppableReportingTask;
-import influxdbreporter.core.utils.UtcClock$;
+import influxdbreporter.ConnectionData;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.concurrent.TimeUnit;
 
-public class InfluxdbReporter {
+public class HttpInfluxdbClient {
 
-    private final influxdbreporter.core.InfluxdbReporter<String> reporter;
-
-    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit) {
-        reporter = new influxdbreporter.core.InfluxdbReporter<>(registry.scalaRegistry, LineProtocolWriter$.MODULE$,
-                client, FiniteDuration.apply(interval, unit), UtcClock$.MODULE$, ExecutionContext.Implicits$.MODULE$.global());
+    public static influxdbreporter.HttpInfluxdbClient defaultHttpClient(ConnectionData connectionData) {
+        return new influxdbreporter.HttpInfluxdbClient(connectionData, ExecutionContext.Implicits$.MODULE$.global(),
+                new FiniteDuration(5, TimeUnit.SECONDS));
     }
-
-    public StoppableReportingTask start() {
-        return reporter.start();
-    }
-
 }

@@ -12,7 +12,15 @@ val commonSettings =
       scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-target:jvm-1.7"),
       removeExistingHeaderBlock := true,
       license := apache2("Copyright 2015"),
-      licenses :=  Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+      licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      isSnapshot := true,
+      publishTo := {
+        if (isSnapshot.value)
+          Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/snapshots")
+        else
+          Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/releases")
+      },
+      credentials += Credentials(Path.userHome / ".ivy2" / ".nexus_touk_pl_credentials")
     )
 
 lazy val core = project.in(file("core"))
@@ -21,10 +29,12 @@ lazy val core = project.in(file("core"))
     name := "influxdb-reporter-core",
     libraryDependencies ++= {
       val dropwizardMetricsV = "3.1.2"
+      val scalaLogging = "2.1.2"
       val scalaTestV = "2.2.5"
 
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropwizardMetricsV,
+        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     })
@@ -36,12 +46,10 @@ lazy val httpClient = project.in(file("http-client"))
     libraryDependencies ++= {
       val typesafeConfigV = "1.3.0"
       val dispatchV = "0.11.2"
-      val scalaLogging = "2.1.2"
 
       Seq(
         "com.typesafe" % "config" % typesafeConfigV,
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV,
-        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV
       )
     }
   )

@@ -20,6 +20,10 @@ import influxdbreporter.core.MetricRegistryImpl;
 import influxdbreporter.core.RegisterMagnet;
 import influxdbreporter.core.collectors.*;
 import influxdbreporter.core.metrics.*;
+import influxdbreporter.core.metrics.push.Counter;
+import influxdbreporter.core.metrics.push.Histogram;
+import influxdbreporter.core.metrics.push.Meter;
+import influxdbreporter.core.metrics.push.Timer;
 
 public class MetricRegistry {
 

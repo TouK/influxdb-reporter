@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics
+package influxdbreporter.core.metrics.push
 
-import com.codahale.metrics.{Reservoir, ExponentiallyDecayingReservoir}
-import Metric.CodehaleHistogram
 import influxdbreporter.core.Tag
+import influxdbreporter.core.metrics.Metric.CodehaleMeter
 
 import scala.annotation.varargs
 
+class Meter extends TagRelatedPushingMetric[CodehaleMeter] {
 
-class Histogram(reservoir: Reservoir) extends TagRelatedMetric[CodehaleHistogram] with Metric[CodehaleHistogram]{
-  def this() = this(new ExponentiallyDecayingReservoir)
+  override protected def createMetric(): CodehaleMeter = new CodehaleMeter()
 
-  override protected def createMetric(): CodehaleHistogram = new CodehaleHistogram(reservoir)
+  @varargs def mark(tags: Tag*): Unit = mark(1L, tags: _*)
 
-  @varargs def update(n: Long, tags: Tag*): Unit = increaseMetric(tags.toList, _.update(n))
+  @varargs def mark(n: Long,tags: Tag*): Unit = increaseMetric(tags.toList, _.mark(n))
 }
