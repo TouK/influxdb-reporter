@@ -31,6 +31,10 @@ class Timer extends TagRelatedPushingMetric[CodehaleTimer] {
 
   @varargs def time(tags: Tag*): TimerContext = new InfluxTimerContextImpl(tags.toList, this)
 
+  @varargs def calculatedTime(time: Long, unit: TimeUnit, tags: Tag*): Unit = {
+    increaseMetric(tags.toList, _.update(time, unit))
+  }
+
   override protected def createMetric(): CodehaleTimer = new CodehaleTimer()
 
   private def notify(tags: List[Tag], time: Long): Unit =
