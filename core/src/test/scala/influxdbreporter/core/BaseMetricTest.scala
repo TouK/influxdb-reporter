@@ -22,7 +22,7 @@ import org.scalatest.time.{Seconds, Span}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class BaseMetricTest extends WordSpec with ScalaFutures {
+abstract class BaseMetricTest extends WordSpec with ScalaFutures {
 
   implicit val ex = ExecutionContext.global
 
@@ -45,9 +45,9 @@ class BaseMetricTest extends WordSpec with ScalaFutures {
   type PhaseAssert = (Phase, String, List[Field], List[Tag]) => Boolean
 
   class MockMetricClient(writer: MockInfluxdbWriterWithPhaseAssertions) extends MetricClient[List[TestData]] {
-    override def sendData(data: WriterData[List[TestData]]): Future[Unit] = {
+    override def sendData(data: WriterData[List[TestData]]): Future[Boolean] = {
       writer.nextPhase()
-      Future.successful(())
+      Future.successful(true)
     }
   }
 

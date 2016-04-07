@@ -37,12 +37,12 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
     .addQueryParameter("u", connectionData.user)
     .addQueryParameter("p", connectionData.password)
 
-  override def sendData(writerData: WriterData[String]): Future[Unit] = {
+  override def sendData(writerData: WriterData[String]): Future[Boolean] = {
     val influxData = writerData.data
     val request: Req = influxdbWriteUrl.POST.setBody(influxData.getBytes(LoadEncoding))
     logRequestResponse(request) {
       httpClient(request > (response => response))
-    }.map(_ => ())
+    } map isResponseSucceed
   }
 
   // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
@@ -56,7 +56,7 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
   private def logRequestResponse(request: Req): (Future[Response] => Future[Response]) = result => {
     def requestBodyToString(req: Req) = new String(req.toRequest.getByteData, LoadEncoding)
     result onComplete {
-      case Success(response) if response.getStatusCode == InfluxSuccessStatusCode =>
+      case Success(response) if isResponseSucceed(response) =>
         logger.info(s"Data was sent and successfully written")
       case Success(response) =>
         logger.warn(s"Request: ${request.toRequest} body:\n${requestBodyToString(request)}\n" +
@@ -66,6 +66,8 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
     }
     result
   }
+
+  private def isResponseSucceed(response: Response) = response.getStatusCode == InfluxSuccessStatusCode
 }
 
 case class ConnectionData(address: String, port: Int, dbName: String, user: String, password: String)

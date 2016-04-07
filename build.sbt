@@ -20,7 +20,8 @@ val commonSettings =
         else
           Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/releases")
       },
-      credentials += Credentials(Path.userHome / ".ivy2" / ".nexus_touk_pl_credentials")
+      credentials += Credentials(Path.userHome / ".ivy2" / ".nexus_touk_pl_credentials"),
+      parallelExecution in Test := false
     )
 
 lazy val core = project.in(file("core"))

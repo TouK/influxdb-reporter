@@ -22,7 +22,7 @@ import influxdbreporter.core.metrics.pull.{PullingGauge, ValueByTag}
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.duration.FiniteDuration
 
-class PullingGaugeTests extends BaseMetricTest{
+class PullingGaugeTests extends BaseMetricTest {
   "A TagRelatedPullingMetricTests metric integration test" in {
     val registry = MetricRegistry("test")
     var valueByTag = ValueByTag(List.empty, -1)

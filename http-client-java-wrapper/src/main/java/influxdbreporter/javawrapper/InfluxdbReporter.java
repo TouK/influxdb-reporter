@@ -28,9 +28,9 @@ public class InfluxdbReporter {
 
     private final influxdbreporter.core.InfluxdbReporter<String> reporter;
 
-    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit) {
+    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, int batchSize, TimeUnit unit) {
         reporter = new influxdbreporter.core.InfluxdbReporter<>(registry.scalaRegistry, LineProtocolWriter$.MODULE$,
-                client, FiniteDuration.apply(interval, unit), UtcClock$.MODULE$, ExecutionContext.Implicits$.MODULE$.global());
+                client, FiniteDuration.apply(interval, unit), batchSize, UtcClock$.MODULE$, ExecutionContext.Implicits$.MODULE$.global());
     }
 
     public StoppableReportingTask start() {

@@ -84,11 +84,11 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
     val w = new Waiter
 
     val metricsClient = new MetricClient[String] {
-      override def sendData(data: WriterData[String]): Future[Unit] = {
+      override def sendData(data: WriterData[String]): Future[Boolean] = {
         if (!areCorrect(data.data)) {
           w.dismiss()
         }
-        Future.successful(())
+        Future.successful(true)
       }
     }
 

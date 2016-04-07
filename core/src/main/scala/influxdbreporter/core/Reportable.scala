@@ -33,9 +33,9 @@ trait Reporter {
 
 trait Reportable[S] {
 
-  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[Option[WriterData[S]]]
+  protected def collectBatchMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]]
 
-  protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean]
+  protected def reportMetrics(collectedMetricsData: WriterData[S]): Future[Boolean]
 }
 
 abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
@@ -55,19 +55,10 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
 
   private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
     try {
-      val collectedMetricsFuture = synchronized {
-        collectMetrics(metricRegistry.getMetricsMap)
-      }
-      val reportedFuture = for {
-        collectedMetrics <- collectedMetricsFuture
-        reported <- reportMetrics(collectedMetrics)
-      } yield reported
-      reportedFuture.onComplete {
-        case Success(_) =>
-          reschedule
-        case Failure(ex) =>
-          reschedule
-          logger.error("Reporting error:", ex)
+      reportCollectedMetrics() andThen {
+        case Failure(ex) => logger.error("Reporting error:", ex)
+      } andThen {
+        case _ => reschedule
       }
     } catch {
       case t: Throwable =>
@@ -75,6 +66,35 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
         logger.error("Collecting error:", t)
     }
   }
+
+  private def reportCollectedMetrics() = {
+    val collectedBatchMetricsFuture = synchronized {
+      collectBatchMetrics(metricRegistry.getMetricsMap)
+    }
+    for {
+      metricsBatches <- collectedBatchMetricsFuture
+      reported <- reportMetricBatchesSequentially(metricsBatches) {
+        reportMetrics
+      }
+    } yield reported
+  }
+
+  private def reportMetricBatchesSequentially[T](batches: TraversableOnce[WriterData[T]])
+                                                (func: WriterData[T] => Future[Boolean]): Future[List[BatchReportingResult[T]]] = {
+    batches.foldLeft(Future.successful[List[BatchReportingResult[T]]](Nil)) {
+      (acc, batch) => acc.flatMap { accList =>
+        func(batch)
+          .map(BatchReportingResult(batch, _) :: accList)
+          .recover { case ex =>
+            logger.error("Batch reporting error:", ex)
+            BatchReportingResult(batch, reported = false) :: accList
+          }
+      }
+    }
+  }
+
+  private case class BatchReportingResult[T](batch: WriterData[T], reported: Boolean)
+
 }
 
 trait StoppableReportingTask {
@@ -96,7 +116,7 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
 
   override def stop(): Unit = {
     isStopped = true
-    if(!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
+    if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
   }
 
   override def reschedule(): Unit = if (!isStopped) {

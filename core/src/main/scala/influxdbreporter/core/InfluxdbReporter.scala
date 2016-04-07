@@ -20,6 +20,7 @@ import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.{MetricByTag, Metric}
 import influxdbreporter.core.metrics.Metric.CodehaleMetric
 import influxdbreporter.core.utils.UtcClock
+import InfluxdbReporter.MAX_BATCH_SIZE
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
@@ -28,14 +29,15 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           writer: Writer[S],
                           client: MetricClient[S],
                           interval: FiniteDuration,
+                          batchSize: Int = MAX_BATCH_SIZE,
                           clock: Clock = UtcClock)
                          (implicit executionContext: ExecutionContext)
   extends ScheduledReporter[S](registry, interval) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
-    new InfluxdbReporter[S](registry, writer, client, newInterval, clock)
+    new InfluxdbReporter[S](registry, writer, client, newInterval, batchSize, clock)
 
-  override protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[Option[WriterData[S]]] = {
+  override protected def collectBatchMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]] = {
     val timestamp = clock.getTick
     Future.sequence(metrics.toList.map {
       case (name, (metric, collector)) =>
@@ -48,22 +50,16 @@ class InfluxdbReporter[S](registry: MetricRegistry,
     }).map(listOfLists => reduceWriterData(listOfLists.flatten))
   }
 
-  override protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean] = {
-    collectedMetricsData match {
-      case Some(data) =>
-        client.sendData(data).map(_ => true)
-      case None =>
-        Future.successful(false)
-    }
+  override protected def reportMetrics(collectedMetricsData: WriterData[S]): Future[Boolean] = {
+    client.sendData(collectedMetricsData)
   }
 
-  private def reduceWriterData(writerData: List[WriterData[S]]): Option[WriterData[S]] = {
-    writerData match {
-      case Nil =>
-        None
-      case list =>
-        Some(list.reduce(_ + _))
-    }
+  private def reduceWriterData(writerData: List[WriterData[S]]): List[WriterData[S]] = {
+    writerData grouped batchSize map (_.reduce(_ + _)) toList
   }
 
+}
+
+object InfluxdbReporter {
+  val MAX_BATCH_SIZE = 5000
 }
