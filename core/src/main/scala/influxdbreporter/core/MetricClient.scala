@@ -19,9 +19,9 @@ import scala.concurrent.Future
 
 trait MetricClient[T] {
 
-  def sendData(data: WriterData[T]): Future[Boolean]
+  def sendData(data: List[WriterData[T]]): Future[Boolean]
 }
 
 class SkipSendingClient extends MetricClient[String] {
-  override def sendData(data: WriterData[String]): Future[Boolean] = Future.successful(true)
+  override def sendData(data: List[WriterData[String]]): Future[Boolean] = Future.successful(true)
 }

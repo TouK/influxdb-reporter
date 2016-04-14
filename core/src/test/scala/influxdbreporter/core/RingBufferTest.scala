@@ -15,18 +15,17 @@
  */
 package influxdbreporter.core
 
-trait Writer[T] {
+import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.concurrent.ScalaFutures
 
-  def write(measurement: String, fields: List[Field], tags: List[Tag], timestamp: Long): WriterData[T]
+class RingBufferTest extends WordSpec with ScalaFutures with Matchers {
 
-  def write(measurement: String, field: Field, tags: List[Tag], timestamp: Long): WriterData[T] =
-    write(measurement, List(field), tags, timestamp)
-
-  def write(measurement: String, field: Field, tag: Tag, timestamp: Long): WriterData[T] =
-    write(measurement, List(field), List(tag), timestamp)
-
-  def write(measurement: String, field: Field, timestamp: Long): WriterData[T] =
-    write(measurement, List(field), List.empty, timestamp)
+  "A test" in {
+    val ringbuffer = new MetricsRingBufferImpl[String](2)
+    val wd1 = WriterData("1")
+    val wd2 = WriterData("2")
+    val wd3 = WriterData("3")
+    ringbuffer.add(wd1 :: wd2 :: wd3 :: Nil)
+    ringbuffer.remove(wd2 :: Nil) should be (wd1 :: Nil)
+  }
 }
-
-case class WriterData[T](data: T)

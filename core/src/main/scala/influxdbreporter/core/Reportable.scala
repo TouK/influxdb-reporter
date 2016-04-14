@@ -33,12 +33,15 @@ trait Reporter {
 
 trait Reportable[S] {
 
-  protected def collectBatchMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]]
+  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]]
 
-  protected def reportMetrics(collectedMetricsData: WriterData[S]): Future[Boolean]
+  protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean]
 }
 
-abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
+abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
+                                    interval: FiniteDuration,
+                                    batcher: Batcher[S],
+                                    ringBuffer: Option[MetricsRingBuffer[S]])
                                    (implicit executionContext: ExecutionContext)
   extends Reporter with Reportable[S] with LazyLogging {
 
@@ -70,25 +73,37 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
       }
     } catch {
       case t: Throwable =>
-        reschedule
         logger.error("Collecting error:", t)
+        reschedule
     }
   }
 
   private def reportCollectedMetrics() = {
-    val collectedBatchMetricsFuture = synchronized {
-      collectBatchMetrics(metricRegistry.getMetricsMap)
+    val collectedMetricsFuture = synchronized {
+      collectMetrics(metricRegistry.getMetricsMap)
     }
     for {
-      metricsBatches <- collectedBatchMetricsFuture
-      reported <- reportMetricBatchesSequentially(metricsBatches) {
+      collectedMetrics <- collectedMetricsFuture
+      notYetSendMetrics = getNotYetSentMetrics(collectedMetrics)
+      batches = batcher.partition(notYetSendMetrics)
+      reported <- reportMetricBatchesSequentially(batches) {
         reportMetrics
       }
+      successfulSentMetrics = reported filter (_.reported) flatMap (_.batch)
+      _ = clearSentMetricsResources(successfulSentMetrics)
     } yield reported
   }
 
-  private def reportMetricBatchesSequentially[T](batches: TraversableOnce[WriterData[T]])
-                                                (func: WriterData[T] => Future[Boolean]): Future[List[BatchReportingResult[T]]] = {
+  private def getNotYetSentMetrics(collectedMetrics: List[WriterData[S]]): List[WriterData[S]] = {
+    ringBuffer.map(_.add(collectedMetrics)).getOrElse(collectedMetrics)
+  }
+
+  private def clearSentMetricsResources(sentMetrics: List[WriterData[S]]): Unit = {
+    ringBuffer.map(_.remove(sentMetrics))
+  }
+
+  private def reportMetricBatchesSequentially[T](batches: TraversableOnce[List[WriterData[T]]])
+                                                (func: List[WriterData[T]] => Future[Boolean]): Future[List[BatchReportingResult[T]]] = {
     batches.foldLeft(Future.successful[List[BatchReportingResult[T]]](Nil)) {
       (acc, batch) => acc.flatMap { accList =>
         func(batch)
@@ -101,7 +116,7 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
     }
   }
 
-  private case class BatchReportingResult[T](batch: WriterData[T], reported: Boolean)
+  private case class BatchReportingResult[T](batch: List[WriterData[T]], reported: Boolean)
 
 }
 

@@ -42,7 +42,7 @@ class InfluxdbReporterTests extends WordSpec with ScalaFutures {
     val metricsClient = new MetricClient[String] {
       @volatile private var isSending = false
 
-      override def sendData(data: WriterData[String]): Future[Boolean] = {
+      override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
         synchronized {
           if (isSending) waiter(fail("Concurrent sending"))
           isSending = true
@@ -91,6 +91,8 @@ class InfluxdbReporterTests extends WordSpec with ScalaFutures {
       LineProtocolWriter,
       metricsClient,
       FiniteDuration(500, TimeUnit.MILLISECONDS),
-      batchSize = 5)
+      new SimpleBatcher(5),
+      None
+    )
   }
 }

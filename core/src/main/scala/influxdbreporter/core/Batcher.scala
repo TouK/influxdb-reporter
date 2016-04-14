@@ -15,18 +15,18 @@
  */
 package influxdbreporter.core
 
-trait Writer[T] {
+trait Batcher[T] {
 
-  def write(measurement: String, fields: List[Field], tags: List[Tag], timestamp: Long): WriterData[T]
-
-  def write(measurement: String, field: Field, tags: List[Tag], timestamp: Long): WriterData[T] =
-    write(measurement, List(field), tags, timestamp)
-
-  def write(measurement: String, field: Field, tag: Tag, timestamp: Long): WriterData[T] =
-    write(measurement, List(field), List(tag), timestamp)
-
-  def write(measurement: String, field: Field, timestamp: Long): WriterData[T] =
-    write(measurement, List(field), List.empty, timestamp)
+  def partition(data: List[WriterData[T]]): List[List[WriterData[T]]]
 }
 
-case class WriterData[T](data: T)
+class SimpleBatcher[T](maxBatchSize: Int) extends Batcher[T] {
+
+  override def partition(data: List[WriterData[T]]): List[List[WriterData[T]]] = {
+    data grouped maxBatchSize toList
+  }
+}
+
+class DisabledBatching[T] extends Batcher[T] {
+  override def partition(data: List[WriterData[T]]): List[List[WriterData[T]]] = List(data)
+}
