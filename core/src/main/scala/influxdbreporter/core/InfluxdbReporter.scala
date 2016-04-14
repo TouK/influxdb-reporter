@@ -27,14 +27,14 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           writer: Writer[S],
                           client: MetricClient[S],
                           interval: FiniteDuration,
-                          batcher: Batcher[S] = new DisabledBatching[S],
-                          ringBuffer: Option[MetricsRingBuffer[S]] = None,
+                          batcher: Batcher[S] = new InfluxBatcher[S],
+                          cache: Option[WriterDataCache[S]] = None,
                           clock: Clock = UtcClock)
                          (implicit executionContext: ExecutionContext)
-  extends ScheduledReporter[S](registry, interval, batcher, ringBuffer) {
+  extends ScheduledReporter[S](registry, interval, batcher, cache) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
-    new InfluxdbReporter[S](registry, writer, client, newInterval, batcher, ringBuffer, clock)
+    new InfluxdbReporter[S](registry, writer, client, newInterval, batcher, cache, clock)
 
   override protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]] = {
     val timestamp = clock.getTick

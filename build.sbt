@@ -31,7 +31,7 @@ lazy val core = project.in(file("core"))
     libraryDependencies ++= {
       val dropwizardMetricsV = "3.1.2"
       val scalaLogging = "2.1.2"
-      val scalaTestV = "2.2.5"
+      val scalaTestV = "2.2.6"
 
       Seq(
         "io.dropwizard.metrics" % "metrics-core" % dropwizardMetricsV,

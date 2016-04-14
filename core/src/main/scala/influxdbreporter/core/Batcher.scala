@@ -20,6 +20,10 @@ trait Batcher[T] {
   def partition(data: List[WriterData[T]]): List[List[WriterData[T]]]
 }
 
+class DisabledBatching[T] extends Batcher[T] {
+  override def partition(data: List[WriterData[T]]): List[List[WriterData[T]]] = List(data)
+}
+
 class SimpleBatcher[T](maxBatchSize: Int) extends Batcher[T] {
 
   override def partition(data: List[WriterData[T]]): List[List[WriterData[T]]] = {
@@ -27,6 +31,8 @@ class SimpleBatcher[T](maxBatchSize: Int) extends Batcher[T] {
   }
 }
 
-class DisabledBatching[T] extends Batcher[T] {
-  override def partition(data: List[WriterData[T]]): List[List[WriterData[T]]] = List(data)
+object InfluxBatcher {
+  val MaxBatchSize = 5000
 }
+
+class InfluxBatcher[T] extends SimpleBatcher[T](InfluxBatcher.MaxBatchSize)

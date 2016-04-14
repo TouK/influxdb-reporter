@@ -41,7 +41,7 @@ trait Reportable[S] {
 abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
                                     interval: FiniteDuration,
                                     batcher: Batcher[S],
-                                    ringBuffer: Option[MetricsRingBuffer[S]])
+                                    cache: Option[WriterDataCache[S]])
                                    (implicit executionContext: ExecutionContext)
   extends Reporter with Reportable[S] with LazyLogging {
 
@@ -95,11 +95,11 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
   }
 
   private def getNotYetSentMetrics(collectedMetrics: List[WriterData[S]]): List[WriterData[S]] = {
-    ringBuffer.map(_.add(collectedMetrics)).getOrElse(collectedMetrics)
+    cache.map(_.add(collectedMetrics)).getOrElse(collectedMetrics)
   }
 
   private def clearSentMetricsResources(sentMetrics: List[WriterData[S]]): Unit = {
-    ringBuffer.map(_.remove(sentMetrics))
+    cache.map(_.remove(sentMetrics))
   }
 
   private def reportMetricBatchesSequentially[T](batches: TraversableOnce[List[WriterData[T]]])

@@ -17,15 +17,15 @@ package influxdbreporter.core
 
 import scala.collection.mutable.ListBuffer
 
-trait MetricsRingBuffer[T] {
+trait WriterDataCache[T] {
 
   def add(data: List[WriterData[T]]): List[WriterData[T]]
 
   def remove(data: List[WriterData[T]]): List[WriterData[T]]
 }
 
-class MetricsRingBufferImpl[T](maxSize: Int)
-  extends MetricsRingBuffer[T] {
+class FixedSizeWriterDataCache[T](maxSize: Int)
+  extends WriterDataCache[T] {
 
   private var ringBuffer: ListBuffer[WriterData[T]] = ListBuffer.empty
 

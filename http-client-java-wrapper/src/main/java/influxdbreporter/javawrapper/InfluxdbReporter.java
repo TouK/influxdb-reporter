@@ -27,7 +27,7 @@ public class InfluxdbReporter {
     private final influxdbreporter.core.InfluxdbReporter<String> reporter;
 
     public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, int batchSize, TimeUnit unit) {
-        scala.Option<MetricsRingBuffer<String>> ringBuffer = scala.Option.apply(null);
+        scala.Option<WriterDataCache<String>> ringBuffer = scala.Option.apply(null);
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
                 LineProtocolWriter$.MODULE$,
