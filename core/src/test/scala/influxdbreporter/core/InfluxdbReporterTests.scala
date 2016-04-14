@@ -29,7 +29,7 @@ import scala.util.Random
 
 class InfluxdbReporterTests extends WordSpec with ScalaFutures {
 
-  "Batch reporting should be invoking sequentially" in {
+  "Batch reportings should be invoking sequentially" in {
 
     implicit val executionContext = ExecutionContext.global
 
@@ -63,14 +63,34 @@ class InfluxdbReporterTests extends WordSpec with ScalaFutures {
       val counter = metricsRegistry.register(s"mycounter-$idx", new Counter)
       counter.inc()
     }
+    val reporter = createReporter(metricsClient, metricsRegistry)
+    reporter.start()
 
-    val reporter = new InfluxdbReporter(metricsRegistry,
+    Thread sleep 6000
+  }
+
+  "Reporter cannot be started twice" in {
+    val reporter = createReporter(new SkipSendingClient)
+    reporter.start()
+    intercept[ReporterAlreadyStartedException] {
+      reporter.start()
+    }
+  }
+
+  "Reporter can be started again only when previously started task was stopped" in {
+    val reporter = createReporter(new SkipSendingClient)
+    val task = reporter.start()
+    task.stop()
+    reporter.start()
+  }
+
+  private def createReporter(metricsClient: MetricClient[String],
+                             metricsRegistry: MetricRegistry = MetricRegistry("simple")) = {
+    implicit val executionContext = ExecutionContext.global
+    new InfluxdbReporter(metricsRegistry,
       LineProtocolWriter,
       metricsClient,
       FiniteDuration(500, TimeUnit.MILLISECONDS),
       batchSize = 5)
-    reporter.start()
-
-    Thread sleep 6000
   }
 }

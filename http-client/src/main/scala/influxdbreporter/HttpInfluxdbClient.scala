@@ -46,7 +46,7 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
   }
 
   // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
-  private lazy val httpClient = Http().configure(builder =>
+  private lazy val httpClient = Http.configure(builder =>
     builder.setAllowPoolingConnection(true)
       .setMaximumConnectionsPerHost(MaxConnections)
       .setMaximumConnectionsTotal(MaxConnections)

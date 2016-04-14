@@ -15,16 +15,16 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.metrics.Metric.CodehaleMetric
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 trait Reporter {
 
@@ -43,9 +43,17 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
   extends Reporter with Reportable[S] with LazyLogging {
 
   private val scheduler = Executors.newScheduledThreadPool(1)
+  private var currentStoppableReportingTask: Option[StoppableReportingTaskWithRescheduling] = None
 
-  override def start(): StoppableReportingTask =
-    new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+  override def start(): StoppableReportingTask = synchronized {
+    if (currentStoppableReportingTask.forall(_.isStopped)) {
+      val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+      currentStoppableReportingTask = Some(stoppableTask)
+      stoppableTask
+    } else {
+      throw new ReporterAlreadyStartedException()
+    }
+  }
 
   private def createTaskJob(rescheduler: Reschedulable) = new Runnable {
     override def run(): Unit = {
@@ -97,6 +105,8 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
 
 }
 
+case class ReporterAlreadyStartedException() extends Exception("Reporter has been already started")
+
 trait StoppableReportingTask {
   def stop(): Unit
 }
@@ -111,16 +121,20 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
   extends StoppableReportingTask with Reschedulable {
 
   private val task = createTask(this)
-  @volatile private var isStopped = false
-  @volatile private var currentScheduledTask = scheduleNextTask()
+  private var stopped = false
+  private var currentScheduledTask = scheduleNextTask()
 
-  override def stop(): Unit = {
-    isStopped = true
+  override def stop(): Unit = synchronized {
+    stopped = true
     if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
   }
 
-  override def reschedule(): Unit = if (!isStopped) {
-    currentScheduledTask = scheduleNextTask()
+  def isStopped: Boolean = synchronized(stopped)
+
+  override def reschedule(): Unit = synchronized {
+    if (!stopped) {
+      currentScheduledTask = scheduleNextTask()
+    }
   }
 
   private def scheduleNextTask() =
