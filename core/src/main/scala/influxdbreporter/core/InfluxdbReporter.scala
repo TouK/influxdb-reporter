@@ -16,12 +16,10 @@
 package influxdbreporter.core
 
 import com.codahale.metrics.Clock
-import influxdbreporter.core.collectors.MetricCollector
-import influxdbreporter.core.metrics.{MetricByTag, Metric}
-import influxdbreporter.core.metrics.Metric.CodehaleMetric
 import influxdbreporter.core.utils.UtcClock
-import scala.concurrent.{ExecutionContext, Future}
+
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 class InfluxdbReporter[S](registry: MetricRegistry,
                           writer: Writer[S],
@@ -31,23 +29,10 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           cache: Option[WriterDataCache[S]] = None,
                           clock: Clock = UtcClock)
                          (implicit executionContext: ExecutionContext)
-  extends ScheduledReporter[S](registry, interval, batcher, cache) {
+  extends ScheduledReporter[S](registry, interval, writer, batcher, cache, clock) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
     new InfluxdbReporter[S](registry, writer, client, newInterval, batcher, cache, clock)
-
-  override protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]] = {
-    val timestamp = clock.getTick
-    Future.sequence(metrics.toList.map {
-      case (name, (metric, collector)) =>
-        metric.popMetrics.map {
-          _.map {
-            case MetricByTag(tags, m) =>
-              collector.collect(writer, name, m, timestamp, tags: _*)
-          }
-        }
-    }).map(listOfLists => listOfLists.flatten)
-  }
 
   override protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean] = {
     client.sendData(collectedMetricsData)

@@ -29,13 +29,17 @@ class FixedSizeWriterDataCache[T](maxSize: Int)
 
   private var ringBuffer: ListBuffer[WriterData[T]] = ListBuffer.empty
 
-  override def add(data: List[WriterData[T]]): List[WriterData[T]] = synchronized {
-    ringBuffer = (ringBuffer ++= data).take(maxSize)
+  override def add(data: List[WriterData[T]]): List[WriterData[T]] = {
+    if (data.nonEmpty) synchronized {
+      ringBuffer = (ringBuffer ++= data).take(maxSize)
+    }
     ringBuffer.toList
   }
 
-  override def remove(data: List[WriterData[T]]): List[WriterData[T]] = synchronized {
-    ringBuffer --= data
+  override def remove(data: List[WriterData[T]]): List[WriterData[T]] = {
+    if (data.nonEmpty) synchronized {
+      ringBuffer --= data
+    }
     ringBuffer.toList
   }
 }

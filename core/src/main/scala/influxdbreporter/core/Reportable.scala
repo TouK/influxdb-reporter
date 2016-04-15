@@ -17,10 +17,7 @@ package influxdbreporter.core
 
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
-import influxdbreporter.core.collectors.MetricCollector
-import influxdbreporter.core.metrics.Metric
-import influxdbreporter.core.metrics.Metric.CodehaleMetric
+import com.codahale.metrics.Clock
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,17 +30,17 @@ trait Reporter {
 
 trait Reportable[S] {
 
-  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]]
-
   protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean]
 }
 
 abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
                                     interval: FiniteDuration,
+                                    writer: Writer[S],
                                     batcher: Batcher[S],
-                                    cache: Option[WriterDataCache[S]])
+                                    cache: Option[WriterDataCache[S]],
+                                    clock: Clock)
                                    (implicit executionContext: ExecutionContext)
-  extends Reporter with Reportable[S] with LazyLogging {
+  extends BaseReporter[S](metricRegistry, writer, batcher, cache, clock) {
 
   private val scheduler = Executors.newScheduledThreadPool(1)
   private var currentStoppableReportingTask: Option[StoppableReportingTaskWithRescheduling] = None
@@ -77,47 +74,6 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
         reschedule
     }
   }
-
-  private def reportCollectedMetrics() = {
-    val collectedMetricsFuture = synchronized {
-      collectMetrics(metricRegistry.getMetricsMap)
-    }
-    for {
-      collectedMetrics <- collectedMetricsFuture
-      notYetSendMetrics = getNotYetSentMetrics(collectedMetrics)
-      batches = batcher.partition(notYetSendMetrics)
-      reported <- reportMetricBatchesSequentially(batches) {
-        reportMetrics
-      }
-      successfulSentMetrics = reported filter (_.reported) flatMap (_.batch)
-      _ = clearSentMetricsResources(successfulSentMetrics)
-    } yield reported
-  }
-
-  private def getNotYetSentMetrics(collectedMetrics: List[WriterData[S]]): List[WriterData[S]] = {
-    cache.map(_.add(collectedMetrics)).getOrElse(collectedMetrics)
-  }
-
-  private def clearSentMetricsResources(sentMetrics: List[WriterData[S]]): Unit = {
-    cache.map(_.remove(sentMetrics))
-  }
-
-  private def reportMetricBatchesSequentially[T](batches: TraversableOnce[List[WriterData[T]]])
-                                                (func: List[WriterData[T]] => Future[Boolean]): Future[List[BatchReportingResult[T]]] = {
-    batches.foldLeft(Future.successful[List[BatchReportingResult[T]]](Nil)) {
-      (acc, batch) => acc.flatMap { accList =>
-        func(batch)
-          .map(BatchReportingResult(batch, _) :: accList)
-          .recover { case ex =>
-            logger.error("Batch reporting error:", ex)
-            BatchReportingResult(batch, reported = false) :: accList
-          }
-      }
-    }
-  }
-
-  private case class BatchReportingResult[T](batch: List[WriterData[T]], reported: Boolean)
-
 }
 
 case class ReporterAlreadyStartedException() extends Exception("Reporter has been already started")
