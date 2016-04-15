@@ -80,6 +80,7 @@ object RegisterMagnet {
   private val registerMagnetForCodehaleMeter = new RegisterMagnetFromCodehaleMetric[CodehaleMeter]
   private val registerMagnetForTimer = new RegisterMagnetFromMetric[Timer, CodehaleTimer]
   private val registerMagnetForCodehaleTimer = new RegisterMagnetFromCodehaleMetric[CodehaleTimer]
+  private def registerMagnetForGauge[T] = new RegisterMagnetFromMetric[DiscreteGauge[T], CodehaleGauge[T]]()
 
   implicit def influxCounterToRegisterMagnet(counter: Counter): RegisterMagnet[Counter] = {
     registerMagnetForCounters(counter)
@@ -103,6 +104,16 @@ object RegisterMagnet {
 
   implicit def pullingGaugeToRegisterMagnet[T](gauge: Metric[CodehaleGauge[T]]): RegisterMagnet[Metric[CodehaleGauge[T]]] = {
     (new RegisterMagnetFromMetric[Metric[CodehaleGauge[T]], CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
+  }
+
+  implicit def discreteGaugeToRegisterMagnet[T](gauge: DiscreteGauge[T]): RegisterMagnet[DiscreteGauge[T]] = {
+    registerMagnetForGauge[T].apply(gauge)
+  }
+
+  implicit def discreteGaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (DiscreteGauge[T], MetricCollector[CodehaleGauge[T]])):
+  RegisterMagnet[DiscreteGauge[T]] = {
+    val (gauge, collector) = gaugeAndCollector
+    registerMagnetForGauge[T].apply(gauge, Some(collector))
   }
 
   implicit def gaugeToRegisterMagnet[T](gauge: CodehaleGauge[T]): RegisterMagnet[CodehaleGauge[T]] = {
