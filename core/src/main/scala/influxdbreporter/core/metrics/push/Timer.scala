@@ -52,4 +52,3 @@ class Timer extends TagRelatedPushingMetric[CodehaleTimer] {
   }
 
 }
-

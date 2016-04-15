@@ -22,7 +22,7 @@ import org.scalatest.time.{Seconds, Span}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class BaseMetricTest extends WordSpec with ScalaFutures {
+abstract class BaseMetricTest extends WordSpec with ScalaFutures {
 
   implicit val ex = ExecutionContext.global
 
@@ -45,9 +45,9 @@ class BaseMetricTest extends WordSpec with ScalaFutures {
   type PhaseAssert = (Phase, String, List[Field], List[Tag]) => Boolean
 
   class MockMetricClient(writer: MockInfluxdbWriterWithPhaseAssertions) extends MetricClient[List[TestData]] {
-    override def sendData(data: WriterData[List[TestData]]): Future[Unit] = {
+    override def sendData(data: List[WriterData[List[TestData]]]): Future[Boolean] = {
       writer.nextPhase()
-      Future.successful(())
+      Future.successful(true)
     }
   }
 
@@ -64,7 +64,7 @@ class BaseMetricTest extends WordSpec with ScalaFutures {
       if (!assertPhase(phase, measurement, fields, tags)) {
         waiter(fail(s"In phase $phase these data {[name:[$measurement], fields:[$fields], tags:[$tags]} were not expected"))
       }
-      TestWriterData(TestData(measurement, fields, tags) :: Nil)
+      WriterData(TestData(measurement, fields, tags) :: Nil)
     }
 
     def nextPhase() = phaseChange {
@@ -93,10 +93,5 @@ class BaseMetricTest extends WordSpec with ScalaFutures {
   }
 
   case class TestData(name: String, fields: List[Field], tags: List[Tag])
-
-  case class TestWriterData(testData: List[TestData]) extends WriterData(testData) {
-    override def +(wd: WriterData[List[TestData]]): WriterData[List[TestData]] =
-      TestWriterData(wd.data ::: testData)
-  }
 
 }

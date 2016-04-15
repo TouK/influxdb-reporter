@@ -25,7 +25,7 @@ object LineProtocolWriter extends Writer[String] {
                      fields: List[Field],
                      tags: List[Tag],
                      timestamp: Long): WriterData[String] =
-    StringWriterData {
+    WriterData {
       s"${format(measurement)}${tagsToString(tags)}${fieldsToString(fields)} $timestamp\n"
     }
 
@@ -42,11 +42,6 @@ object LineProtocolWriter extends Writer[String] {
       case str => str
     }
 
-}
-
-case class StringWriterData(value: String) extends WriterData(value) {
-  override def +(that: WriterData[String]): WriterData[String] =
-    this.copy(this.data + that.data)
 }
 
 private object LineProtocolTagFieldValueFormatter {

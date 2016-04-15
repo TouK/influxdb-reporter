@@ -18,14 +18,16 @@ package influxdbreporter.core
 import java.util.concurrent.TimeUnit
 
 import influxdbreporter.core.metrics.pull.{PullingGauge, ValueByTag}
+import influxdbreporter.core.metrics.push.DiscreteGauge
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
-class PullingGaugeTests extends BaseMetricTest{
+class PullingGaugeTests extends BaseMetricTest {
   "A TagRelatedPullingMetricTests metric integration test" in {
     val registry = MetricRegistry("test")
     var valueByTag = ValueByTag(List.empty, -1)
+
     val registeredCounter = registry.register("mygauge", new PullingGauge[Int] {
       override def getValues(implicit ec: ExecutionContext): Future[List[ValueByTag[Int]]] =
         Future.successful(List(valueByTag))

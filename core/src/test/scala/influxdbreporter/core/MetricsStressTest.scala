@@ -84,11 +84,11 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
     val w = new Waiter
 
     val metricsClient = new MetricClient[String] {
-      override def sendData(data: WriterData[String]): Future[Unit] = {
-        if (!areCorrect(data.data)) {
+      override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
+        if (!areCorrect(data map (_.data))) {
           w.dismiss()
         }
-        Future.successful(())
+        Future.successful(true)
       }
     }
 
@@ -123,7 +123,7 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
     }
   }
 
-  private def areCorrect(data: String): Boolean = data.split("\n").forall(line =>
+  private def areCorrect(data: List[String]): Boolean = data.forall(line =>
     line.startsWith("stress.") && (line.filter(_ == ' ').length == 2)
   )
 

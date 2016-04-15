@@ -18,10 +18,11 @@ package influxdbreporter
 import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.{Config, ConfigFactory}
-import influxdbreporter.core.{InfluxdbReporter, LineProtocolWriter, MetricRegistry, Reporter}
+import influxdbreporter.core._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
 
 object HttpInfluxdbReporter {
 
@@ -45,7 +46,9 @@ object HttpInfluxdbReporter {
         config.getString("user"),
         config.getString("password")
       )),
-      interval
+      interval,
+      new InfluxBatcher,
+      Try(config.getInt("unsent-cache-size")).toOption.map(new FixedSizeWriterDataCache(_))
     )
   }
 }

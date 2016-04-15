@@ -15,16 +15,13 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.{ScheduledExecutorService, Executors, TimeUnit}
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
-import influxdbreporter.core.collectors.MetricCollector
-import influxdbreporter.core.metrics.Metric
-import influxdbreporter.core.metrics.Metric.CodehaleMetric
+import com.codahale.metrics.Clock
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 trait Reporter {
 
@@ -33,19 +30,30 @@ trait Reporter {
 
 trait Reportable[S] {
 
-  protected def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[Option[WriterData[S]]]
-
-  protected def reportMetrics(collectedMetricsData: Option[WriterData[S]]): Future[Boolean]
+  protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean]
 }
 
-abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: FiniteDuration)
+abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
+                                    interval: FiniteDuration,
+                                    writer: Writer[S],
+                                    batcher: Batcher[S],
+                                    cache: Option[WriterDataCache[S]],
+                                    clock: Clock)
                                    (implicit executionContext: ExecutionContext)
-  extends Reporter with Reportable[S] with LazyLogging {
+  extends BaseReporter[S](metricRegistry, writer, batcher, cache, clock) {
 
   private val scheduler = Executors.newScheduledThreadPool(1)
+  private var currentStoppableReportingTask: Option[StoppableReportingTaskWithRescheduling] = None
 
-  override def start(): StoppableReportingTask =
-    new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+  override def start(): StoppableReportingTask = synchronized {
+    if (currentStoppableReportingTask.forall(_.isStopped)) {
+      val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+      currentStoppableReportingTask = Some(stoppableTask)
+      stoppableTask
+    } else {
+      throw new ReporterAlreadyStartedException()
+    }
+  }
 
   private def createTaskJob(rescheduler: Reschedulable) = new Runnable {
     override def run(): Unit = {
@@ -55,27 +63,20 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry, interval: Fi
 
   private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
     try {
-      val collectedMetricsFuture = synchronized {
-        collectMetrics(metricRegistry.getMetricsMap)
-      }
-      val reportedFuture = for {
-        collectedMetrics <- collectedMetricsFuture
-        reported <- reportMetrics(collectedMetrics)
-      } yield reported
-      reportedFuture.onComplete {
-        case Success(_) =>
-          reschedule
-        case Failure(ex) =>
-          reschedule
-          logger.error("Reporting error:", ex)
+      reportCollectedMetrics() andThen {
+        case Failure(ex) => logger.error("Reporting error:", ex)
+      } andThen {
+        case _ => reschedule
       }
     } catch {
       case t: Throwable =>
-        reschedule
         logger.error("Collecting error:", t)
+        reschedule
     }
   }
 }
+
+case class ReporterAlreadyStartedException() extends Exception("Reporter has been already started")
 
 trait StoppableReportingTask {
   def stop(): Unit
@@ -91,16 +92,20 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
   extends StoppableReportingTask with Reschedulable {
 
   private val task = createTask(this)
-  @volatile private var isStopped = false
-  @volatile private var currentScheduledTask = scheduleNextTask()
+  private var stopped = false
+  private var currentScheduledTask = scheduleNextTask()
 
-  override def stop(): Unit = {
-    isStopped = true
-    if(!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
+  override def stop(): Unit = synchronized {
+    stopped = true
+    if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
   }
 
-  override def reschedule(): Unit = if (!isStopped) {
-    currentScheduledTask = scheduleNextTask()
+  def isStopped: Boolean = synchronized(stopped)
+
+  override def reschedule(): Unit = synchronized {
+    if (!stopped) {
+      currentScheduledTask = scheduleNextTask()
+    }
   }
 
   private def scheduleNextTask() =

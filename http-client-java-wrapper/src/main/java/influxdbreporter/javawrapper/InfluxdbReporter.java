@@ -15,9 +15,7 @@
  */
 package influxdbreporter.javawrapper;
 
-import influxdbreporter.core.LineProtocolWriter$;
-import influxdbreporter.core.MetricClient;
-import influxdbreporter.core.StoppableReportingTask;
+import influxdbreporter.core.*;
 import influxdbreporter.core.utils.UtcClock$;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.FiniteDuration;
@@ -28,9 +26,18 @@ public class InfluxdbReporter {
 
     private final influxdbreporter.core.InfluxdbReporter<String> reporter;
 
-    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit) {
-        reporter = new influxdbreporter.core.InfluxdbReporter<>(registry.scalaRegistry, LineProtocolWriter$.MODULE$,
-                client, FiniteDuration.apply(interval, unit), UtcClock$.MODULE$, ExecutionContext.Implicits$.MODULE$.global());
+    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, int batchSize, TimeUnit unit) {
+        scala.Option<WriterDataCache<String>> ringBuffer = scala.Option.apply(null);
+        reporter = new influxdbreporter.core.InfluxdbReporter<>(
+                registry.scalaRegistry,
+                LineProtocolWriter$.MODULE$,
+                client,
+                FiniteDuration.apply(interval, unit),
+                new SimpleBatcher<String>(batchSize),
+                ringBuffer,
+                UtcClock$.MODULE$,
+                ExecutionContext.Implicits$.MODULE$.global()
+        );
     }
 
     public StoppableReportingTask start() {
