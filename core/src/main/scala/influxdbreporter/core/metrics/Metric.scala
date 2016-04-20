@@ -55,12 +55,12 @@ object MetricByTag {
   type MetricByTags[U <: CodehaleMetric] = List[MetricByTag[U]]
 }
 
-case class MetricByTag[U <: CodehaleMetric](tags: InfluxdbTags, metric: U) {
+case class MetricByTag[U <: CodehaleMetric](tags: InfluxdbTags, metric: U, timestamp: Option[Long] = None) {
   def withTag(tag: Tag): MetricByTag[U] = {
     copy(tags = tag :: tags)
   }
 
-  def map[NU <: CodehaleMetric](f: U => NU) = {
+  def map[NU <: CodehaleMetric](f: U => NU): MetricByTag[NU] = {
     copy(metric = f(metric))
   }
 }

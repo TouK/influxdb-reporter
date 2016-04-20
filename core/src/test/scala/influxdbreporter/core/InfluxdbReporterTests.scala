@@ -15,7 +15,6 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 import influxdbreporter.core.metrics.push.Counter
@@ -24,11 +23,10 @@ import org.scalatest.concurrent.AsyncAssertions.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.SpanSugar._
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class InfluxdbReporterTests extends WordSpec with ScalaFutures {
+class InfluxdbReporterTests extends WordSpec with TestReporterProvider with ScalaFutures {
 
   implicit val executionContext = ExecutionContext.global
 
@@ -100,13 +98,13 @@ class InfluxdbReporterTests extends WordSpec with ScalaFutures {
       override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
         val result: Future[Boolean] = sendInvocationCount match {
           case 0 =>
-            if (data.length != 2) waiter(fail("Wrong count of measurements"))
+            if (data.length != 3) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
             Future.successful(false)
           case 1 =>
-            if (data.length != 3) waiter(fail("Wrong count of measurements"))
+            if (data.length != 4) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
             Future.successful(true)
           case 2 =>
-            if (data.length != 1) waiter(fail("Wrong count of measurements"))
+            if (data.length != 1) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
             Future.successful(true)
           case _ =>
             waiter(fail("Should not happend"))
@@ -119,13 +117,15 @@ class InfluxdbReporterTests extends WordSpec with ScalaFutures {
 
     val counter1 = metricsRegistry.register("c1", new Counter)
     val counter2 = metricsRegistry.register("c2", new Counter)
+    val counter3 = metricsRegistry.register("c3", new Counter)
 
-    val reporter = createReporter(metricsClient, metricsRegistry, Some(new FixedSizeWriterDataCache(3)))
+    val reporter = createReporter(metricsClient, metricsRegistry, Some(new FixedSizeWriterDataCache(2)))
     reporter.start()
 
     Future {
       counter1.inc(4)
       counter2.inc()
+      counter3.inc(2)
 
       Thread.sleep(600)
 
@@ -143,18 +143,6 @@ class InfluxdbReporterTests extends WordSpec with ScalaFutures {
     waiter.await(timeout(1900 millis))
   }
 
-  private def createReporter(metricsClient: MetricClient[String],
-                             metricsRegistry: MetricRegistry = MetricRegistry("simple"),
-                             cache: Option[WriterDataCache[String]] = None)
-                            (implicit executionContext: ExecutionContext) = {
-    new InfluxdbReporter(metricsRegistry,
-      LineProtocolWriter,
-      metricsClient,
-      FiniteDuration(500, TimeUnit.MILLISECONDS),
-      new SimpleBatcher(5),
-      cache
-    )
-  }
 
   private class SendInvocationCountingMetricsClientDecorator[T](metricClient: MetricClient[T])
                                                                (implicit executionContext: ExecutionContext)
