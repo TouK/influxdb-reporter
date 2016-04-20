@@ -15,13 +15,14 @@
  */
 package influxdbreporter.core
 
+import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 
 trait WriterDataCache[T] {
 
-  def add(data: List[WriterData[T]]): List[WriterData[T]]
+  def update(add: List[WriterData[T]] = Nil, remove: List[WriterData[T]] = Nil): List[WriterData[T]]
 
-  def remove(data: List[WriterData[T]]): List[WriterData[T]]
+  def get(): List[WriterData[T]]
 }
 
 class FixedSizeWriterDataCache[T](maxSize: Int)
@@ -29,17 +30,15 @@ class FixedSizeWriterDataCache[T](maxSize: Int)
 
   private var ringBuffer: ListBuffer[WriterData[T]] = ListBuffer.empty
 
-  override def add(data: List[WriterData[T]]): List[WriterData[T]] = {
-    if (data.nonEmpty) synchronized {
-      ringBuffer = (ringBuffer ++= data).take(maxSize)
+  override def update(add: List[WriterData[T]] = Nil, remove: List[WriterData[T]] = Nil): List[WriterData[T]] = {
+    if (add.nonEmpty || remove.nonEmpty) synchronized {
+      ringBuffer --= remove
+      add ++=: ringBuffer
+      ringBuffer = ringBuffer.distinct.take(maxSize)
     }
     ringBuffer.toList
   }
 
-  override def remove(data: List[WriterData[T]]): List[WriterData[T]] = {
-    if (data.nonEmpty) synchronized {
-      ringBuffer --= data
-    }
-    ringBuffer.toList
-  }
+  override def get(): List[WriterData[T]] = ringBuffer.toList
+
 }

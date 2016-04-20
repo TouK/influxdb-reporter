@@ -37,22 +37,24 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
     }
     for {
       collectedMetrics <- collectedMetricsFuture
-      notYetSendMetrics = getNotYetSentMetrics(collectedMetrics)
+      notYetSendMetrics = collectedMetrics ::: notYetSentMetricsFromCache
       batches = batcher.partition(notYetSendMetrics)
       reported <- reportMetricBatchesSequentially(batches) {
         reportMetrics
       }
-      successfulSentMetrics = reported filter (_.reported) flatMap (_.batch)
-      _ = clearSentMetricsResources(successfulSentMetrics)
+      _ = updateNotSentMetricsCache(reported)
     } yield reported
   }
 
-  private def getNotYetSentMetrics(collectedMetrics: List[WriterData[S]]): List[WriterData[S]] = {
-    cache.map(_.add(collectedMetrics)).getOrElse(collectedMetrics)
+  private def notYetSentMetricsFromCache: List[WriterData[S]] = {
+    cache map (_.get()) getOrElse Nil
   }
 
-  private def clearSentMetricsResources(sentMetrics: List[WriterData[S]]): Unit = {
-    cache.map(_.remove(sentMetrics))
+  private def updateNotSentMetricsCache(reportResult: List[BatchReportingResult[S]]): Unit = {
+    val (sent, notSent) = reportResult partition (_.reported)
+    val notSentMetrics = notSent flatMap (_.batch)
+    val sentMetrics = sent flatMap (_.batch)
+    cache.map(_.update(notSentMetrics, sentMetrics))
   }
 
   private def reportMetricBatchesSequentially[T](batches: TraversableOnce[List[WriterData[T]]])

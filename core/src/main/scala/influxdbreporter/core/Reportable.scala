@@ -80,6 +80,7 @@ case class ReporterAlreadyStartedException() extends Exception("Reporter has bee
 
 trait StoppableReportingTask {
   def stop(): Unit
+  def isStopped: Boolean
 }
 
 trait Reschedulable {
@@ -100,7 +101,7 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
     if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
   }
 
-  def isStopped: Boolean = synchronized(stopped)
+  override def isStopped: Boolean = synchronized(stopped)
 
   override def reschedule(): Unit = synchronized {
     if (!stopped) {

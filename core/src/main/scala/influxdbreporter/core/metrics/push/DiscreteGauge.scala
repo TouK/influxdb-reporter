@@ -21,12 +21,12 @@ import java.util.concurrent.atomic.AtomicReference
 import influxdbreporter.core.Tag
 import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.metrics.MetricByTag._
-import influxdbreporter.core.metrics.{Metric, MetricByTag}
+import influxdbreporter.core.metrics.{Metric, MetricByTag, UniquenessTagAppender}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
-class DiscreteGauge[T] extends Metric[CodehaleGauge[T]] {
+class DiscreteGauge[T] extends Metric[CodehaleGauge[T]] with UniquenessTagAppender {
 
   private val metricByTags = new AtomicReference(new ConcurrentLinkedQueue[MetricByTag[CodehaleGauge[T]]]())
 
@@ -39,6 +39,7 @@ class DiscreteGauge[T] extends Metric[CodehaleGauge[T]] {
 
   override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodehaleGauge[T]]] = {
     val snapshot = metricByTags.getAndSet(new ConcurrentLinkedQueue[MetricByTag[CodehaleGauge[T]]]())
-    Future.successful(snapshot.asScala.toList)
+    Future.successful(mapListByAddingUniqueTagToEachMetric(snapshot.asScala.toList))
   }
+
 }
