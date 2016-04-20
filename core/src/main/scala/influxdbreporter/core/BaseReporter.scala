@@ -77,8 +77,8 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
       case (name, (metric, collector)) =>
         metric.popMetrics.map {
           _.map {
-            case MetricByTag(tags, m) =>
-              collector.collect(writer, name, m, timestamp, tags: _*)
+            case MetricByTag(tags, m, timestampOpt) =>
+              collector.collect(writer, name, m, timestampOpt.getOrElse(timestamp), tags: _*)
           }
         }
     }).map(listOfLists => listOfLists.flatten)
