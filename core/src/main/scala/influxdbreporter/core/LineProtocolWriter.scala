@@ -19,24 +19,24 @@ import java.text.{DecimalFormatSymbols, DecimalFormat}
 
 object LineProtocolWriter extends Writer[String] {
 
-  import LineProtocolTagFieldValueFormatter.format
+  import LineProtocolTagFieldFormatter.{formatKey, formatValue}
 
   override def write(measurement: String,
                      fields: List[Field],
                      tags: List[Tag],
                      timestamp: Long): WriterData[String] =
     WriterData {
-      s"${format(measurement)}${tagsToString(tags)}${fieldsToString(fields)} $timestamp\n"
+      s"${formatKey(measurement)}${tagsToString(tags)}${fieldsToString(fields)} $timestamp\n"
     }
 
   private def tagsToString(tags: List[Tag]): String =
     tags.foldLeft(List.empty[String]) {
-      case (acc, tag) => s""",${format(tag.key)}=${format(tag.value)}""" :: acc
+      case (acc, tag) => s""",${formatKey(tag.key)}=${formatValue(tag.value)}""" :: acc
     }.mkString
 
   private def fieldsToString(fields: List[Field]): String =
     fields.foldLeft(List.empty[String]) {
-      case (acc, tag) => s"""${format(tag.key)}=${format(tag.value)}""" :: acc
+      case (acc, tag) => s"""${formatKey(tag.key)}=${formatValue(tag.value)}""" :: acc
     }.mkString(",") match {
       case str if str.nonEmpty => s" $str"
       case str => str
@@ -44,7 +44,7 @@ object LineProtocolWriter extends Writer[String] {
 
 }
 
-private object LineProtocolTagFieldValueFormatter {
+private object LineProtocolTagFieldFormatter {
 
   private val EscapedCharacters = List(" ", ",")
 
@@ -63,10 +63,13 @@ private object LineProtocolTagFieldValueFormatter {
     df
   }
 
-  def format(value: Any): String = escape {
+  def formatKey(key: String): String = escape(key)
+
+  def formatValue(value: Any): String = escape {
     value match {
       case v: Double => customDecimalFormat.format(value)
       case v: Float => customDecimalFormat.format(value)
+      case v: String => s"""\"$v\""""
       case _ => value.toString
     }
   }
