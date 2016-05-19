@@ -39,6 +39,12 @@ class LineProtocolWriterTests extends WordSpec {
       }
     }
 
+    "skip tag when value is empty" in {
+      assertResult(WriterData[String]("measurement f=\"\" 1000000\n")) {
+        LineProtocolWriter.write("measurement", Field("f", ""), Tag("t", ""), 1000000L)
+      }
+    }
+
     "properly escape space character" in {
       assertResult(WriterData[String]("measurement\\ 1,t\\ 2=tv\\ 2 f\\ 1=\"fv\\ 1\" 1000000\n")) {
         LineProtocolWriter.write("measurement 1", Field("f 1", "fv 1"), Tag("t 2", "tv 2"), 1000000L)

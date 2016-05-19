@@ -30,9 +30,11 @@ object LineProtocolWriter extends Writer[String] {
     }
 
   private def tagsToString(tags: List[Tag]): String =
-    tags.foldLeft(List.empty[String]) {
-      case (acc, tag) => s""",${formatLinePart(tag.key)}=${formatKeyValue(tag.value)}""" :: acc
-    }.mkString
+    tags.map(tag => (formatLinePart(tag.key), formatKeyValueIfValueIsCorrect(tag.value)))
+      .foldLeft(List.empty[String]) {
+        case (acc, (formattedTagKey, Some(formattedTagVaue))) => s""",$formattedTagKey=$formattedTagVaue""" :: acc
+        case (acc, _) => acc
+      }.mkString
 
   private def fieldsToString(fields: List[Field]): String =
     fields.foldLeft(List.empty[String]) {
@@ -69,12 +71,13 @@ private object LineProtocolPartsFormatter {
     escape(key, LineEscapedCharacters)
   }
 
-  def formatKeyValue(value: Any): String = value match {
-    case v: Double => customDecimalFormat.format(value)
-    case v: Float => customDecimalFormat.format(value)
-    case true => TrueString
-    case false => FalseString
-    case _ => escape(value.toString, LineEscapedCharacters)
+  def formatKeyValueIfValueIsCorrect(value: Any): Option[String] = value match {
+    case v: Double => Some(customDecimalFormat.format(value))
+    case v: Float => Some(customDecimalFormat.format(value))
+    case true => Some(TrueString)
+    case false => Some(FalseString)
+    case "" => None
+    case _ => Some(escape(value.toString, LineEscapedCharacters))
   }
 
   def formatFieldValue(value: Any): String = value match {
