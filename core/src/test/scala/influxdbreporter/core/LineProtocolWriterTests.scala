@@ -30,6 +30,10 @@ class LineProtocolWriterTests extends WordSpec {
         LineProtocolWriter.write("measurement", Field("f", "value1"), Tag("t", "value2"), 1000000L)
       }
 
+      assertResult(WriterData[String]("measurement,t=2 f=1.0 1000000\n")) {
+        LineProtocolWriter.write("measurement", Field("f", 1L), Tag("t", 2L), 1000000L)
+      }
+
       assertResult(WriterData[String]("measurement,t=20.2 f=10.1 1000000\n")) {
         LineProtocolWriter.write("measurement", Field("f", 10.10), Tag("t", 20.20), 1000000L)
       }
