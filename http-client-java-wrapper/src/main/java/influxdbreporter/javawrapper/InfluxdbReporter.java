@@ -26,14 +26,14 @@ public class InfluxdbReporter {
 
     private final influxdbreporter.core.InfluxdbReporter<String> reporter;
 
-    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, int batchSize, TimeUnit unit) {
+    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit) {
         scala.Option<WriterDataCache<String>> ringBuffer = scala.Option.apply(null);
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
                 LineProtocolWriter$.MODULE$,
                 client,
                 FiniteDuration.apply(interval, unit),
-                new SimpleBatcher<String>(batchSize),
+                new InfluxBatcher<String>(),
                 ringBuffer,
                 UtcClock$.MODULE$,
                 ExecutionContext.Implicits$.MODULE$.global()

@@ -19,34 +19,38 @@ import java.text.{DecimalFormatSymbols, DecimalFormat}
 
 object LineProtocolWriter extends Writer[String] {
 
-  import LineProtocolTagFieldValueFormatter.format
+  import LineProtocolPartsFormatter._
 
   override def write(measurement: String,
                      fields: List[Field],
                      tags: List[Tag],
                      timestamp: Long): WriterData[String] =
     WriterData {
-      s"${format(measurement)}${tagsToString(tags)}${fieldsToString(fields)} $timestamp\n"
+      s"${formatLinePart(measurement)}${tagsToString(tags)}${fieldsToString(fields)} $timestamp\n"
     }
 
   private def tagsToString(tags: List[Tag]): String =
-    tags.foldLeft(List.empty[String]) {
-      case (acc, tag) => s""",${format(tag.key)}=${format(tag.value)}""" :: acc
-    }.mkString
+    tags.map(tag => (formatLinePart(tag.key), formatKeyValueIfValueIsCorrect(tag.value)))
+      .foldLeft(List.empty[String]) {
+        case (acc, (formattedTagKey, Some(formattedTagVaue))) => s""",$formattedTagKey=$formattedTagVaue""" :: acc
+        case (acc, _) => acc
+      }.mkString
 
   private def fieldsToString(fields: List[Field]): String =
     fields.foldLeft(List.empty[String]) {
-      case (acc, tag) => s"""${format(tag.key)}=${format(tag.value)}""" :: acc
+      case (acc, tag) => s"""${formatLinePart(tag.key)}=${formatFieldValue(tag.value)}""" :: acc
     }.mkString(",") match {
       case str if str.nonEmpty => s" $str"
       case str => str
     }
-
 }
 
-private object LineProtocolTagFieldValueFormatter {
+private object LineProtocolPartsFormatter {
 
-  private val EscapedCharacters = List(" ", ",")
+  private val LineEscapedCharacters = List(" ", ",")
+  private val FieldValueEscapedCharacters = "\"" :: LineEscapedCharacters
+  private val TrueString = "true"
+  private val FalseString = "false"
 
   private val customDecimalFormat = {
     val df = new DecimalFormat()
@@ -63,16 +67,31 @@ private object LineProtocolTagFieldValueFormatter {
     df
   }
 
-  def format(value: Any): String = escape {
-    value match {
-      case v: Double => customDecimalFormat.format(value)
-      case v: Float => customDecimalFormat.format(value)
-      case _ => value.toString
-    }
+  def formatLinePart(key: String): String = {
+    escape(key, LineEscapedCharacters)
   }
 
-  private def escape(value: String): String =
-    EscapedCharacters.foldLeft(value) {
+  def formatKeyValueIfValueIsCorrect(value: Any): Option[String] = value match {
+    case v: Double => Some(customDecimalFormat.format(value))
+    case v: Float => Some(customDecimalFormat.format(value))
+    case true => Some(TrueString)
+    case false => Some(FalseString)
+    case "" => None
+    case _ => Some(escape(value.toString, LineEscapedCharacters))
+  }
+
+  def formatFieldValue(value: Any): String = value match {
+    case v: Double => customDecimalFormat.format(value)
+    case v: Float => customDecimalFormat.format(value)
+    case v: Int => s"${v}i"
+    case v: Long => customDecimalFormat.format(value)
+    case true => TrueString
+    case false => FalseString
+    case v => s"""\"${escape(v.toString, FieldValueEscapedCharacters)}\""""
+  }
+
+  private def escape(value: String, toEscape: List[String]): String =
+    toEscape.foldLeft(value) {
       case (acc, escapedChar) => acc.replaceAll(escapedChar, """\\""" + escapedChar)
     }
 }
