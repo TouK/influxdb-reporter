@@ -17,7 +17,7 @@ package influxdbreporter.core
 
 import java.util.concurrent.TimeUnit
 
-import influxdbreporter.core.metrics.Metric.CodehaleCounter
+import influxdbreporter.core.metrics.Metric.CodahaleCounter
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,7 +25,7 @@ class CodehaleCounterTests extends BaseMetricTest {
 
   "A CodehaleCounter metric integration test" in {
     val registry = MetricRegistry("test")
-    val registeredCounter = registry.register("mycounter", new CodehaleCounter)
+    val registeredCounter = registry.register("mycounter", new CodahaleCounter)
 
     val mockWriter = createMockWriter(onPhaseChange(registeredCounter), assertPhase)
     val mockClient = createMockMetricClient(mockWriter)
@@ -36,7 +36,7 @@ class CodehaleCounterTests extends BaseMetricTest {
     task.stop()
   }
 
-  private def onPhaseChange(registeredCounter: CodehaleCounter): PhaseChangeAction = {
+  private def onPhaseChange(registeredCounter: CodahaleCounter): PhaseChangeAction = {
     case PhaseOne =>
       registeredCounter.inc()
       registeredCounter.inc()

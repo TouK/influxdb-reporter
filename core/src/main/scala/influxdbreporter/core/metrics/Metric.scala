@@ -15,17 +15,17 @@
  */
 package influxdbreporter.core.metrics
 
-import Metric.CodehaleMetric
+import Metric.CodahaleMetric
 import MetricByTag.{InfluxdbTags, MetricByTags}
 import influxdbreporter.core.Tag
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait Metric[T <: CodehaleMetric] {
+trait Metric[T <: CodahaleMetric] {
 
   def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]]
 
-  def map[NT <: CodehaleMetric](f: T => NT) = new Metric[NT] {
+  def map[NT <: CodahaleMetric](f: T => NT) = new Metric[NT] {
     override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[NT]] =
       Metric.this.popMetrics.map { metrics =>
         metrics.map { metric =>
@@ -34,7 +34,7 @@ trait Metric[T <: CodehaleMetric] {
       }
   }
 
-  def mapAll[NT <: CodehaleMetric](f: MetricByTags[T] => MetricByTags[NT]) = new Metric[NT] {
+  def mapAll[NT <: CodahaleMetric](f: MetricByTags[T] => MetricByTags[NT]) = new Metric[NT] {
     override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[NT]] =
       Metric.this.popMetrics.map(f)
   }
@@ -42,25 +42,25 @@ trait Metric[T <: CodehaleMetric] {
 }
 
 object Metric {
-  type CodehaleMetric = com.codahale.metrics.Metric
-  type CodehaleCounter = com.codahale.metrics.Counter
-  type CodehaleHistogram = com.codahale.metrics.Histogram
-  type CodehaleMeter = com.codahale.metrics.Meter
-  type CodehaleGauge[T] = com.codahale.metrics.Gauge[T]
-  type CodehaleTimer = com.codahale.metrics.Timer
+  type CodahaleMetric = com.codahale.metrics.Metric
+  type CodahaleCounter = com.codahale.metrics.Counter
+  type CodahaleHistogram = com.codahale.metrics.Histogram
+  type CodahaleMeter = com.codahale.metrics.Meter
+  type CodahaleGauge[T] = com.codahale.metrics.Gauge[T]
+  type CodahaleTimer = com.codahale.metrics.Timer
 }
 
 object MetricByTag {
   type InfluxdbTags = List[Tag]
-  type MetricByTags[U <: CodehaleMetric] = List[MetricByTag[U]]
+  type MetricByTags[U <: CodahaleMetric] = List[MetricByTag[U]]
 }
 
-case class MetricByTag[U <: CodehaleMetric](tags: InfluxdbTags, metric: U, timestamp: Option[Long] = None) {
+case class MetricByTag[U <: CodahaleMetric](tags: InfluxdbTags, metric: U, timestamp: Option[Long] = None) {
   def withTag(tag: Tag): MetricByTag[U] = {
     copy(tags = tag :: tags)
   }
 
-  def map[NU <: CodehaleMetric](f: U => NU): MetricByTag[NU] = {
+  def map[NU <: CodahaleMetric](f: U => NU): MetricByTag[NU] = {
     copy(metric = f(metric))
   }
 }

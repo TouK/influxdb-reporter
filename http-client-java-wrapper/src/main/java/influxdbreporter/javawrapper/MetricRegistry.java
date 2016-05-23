@@ -44,14 +44,27 @@ public class MetricRegistry {
                 });
     }
 
+    public <U extends com.codahale.metrics.Metric, T extends Metric<U>> T register(final String name,
+                                                                                   final T metric,
+                                                                                   final MetricCollector<U> collector) {
+        return scalaRegistry.register(
+                name,
+                new RegisterMagnet<T>() {
+                    @Override
+                    public T apply(final String name, MetricRegistryImpl registryImpl) {
+                        return registryImpl.registerMetricWithCollector(name, metric, collector);
+                    }
+                });
+    }
+
     public void unregister(String name) {
         scalaRegistry.unregister(name);
     }
 
     private MetricCollector<? extends com.codahale.metrics.Metric> metricCollectorOfMetric(Metric metric) {
-        if (metric instanceof Counter) return CounterCollector$.MODULE$;
-        else if (metric instanceof Histogram) return HistogramCollector$.MODULE$;
-        else if (metric instanceof Meter) return MeterCollector$.MODULE$;
+        if (metric instanceof Counter) return CounterCollector.apply();
+        else if (metric instanceof Histogram) return HistogramCollector.apply();
+        else if (metric instanceof Meter) return MeterCollector.apply();
         else if (metric instanceof Timer) return SecondTimerCollector$.MODULE$;
         else throw new IllegalArgumentException("Unknown metric type: " + metric.getClass().getName());
     }

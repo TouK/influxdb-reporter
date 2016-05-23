@@ -16,22 +16,21 @@
 package influxdbreporter.core.collectors
 
 import com.codahale.metrics.Gauge
-import influxdbreporter.core.{Field, Tag, Writer, WriterData}
+import influxdbreporter.core.Field
+import GaugeCollector.ValueField
 
-class GaugeCollector[T] extends MetricCollector[Gauge[T]] {
+sealed class GaugeCollector[T](fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[Gauge[T], GaugeCollector[T]](fieldFM) {
 
-  override def collect[U](writer: Writer[U],
-                          name: String,
-                          metric: Gauge[T],
-                          timestamp: Long,
-                          tags: Tag*): WriterData[U] =
-    writer.write(s"$name.gauge", fields(metric), tags.toList, timestamp)
+  override protected def measurementName: String = "gauge"
 
-  private def fields(gauge: Gauge[T]): List[Field] = {
-    Map(
-      "value" -> gauge.getValue
-    ).map {
-      case (key, value) => Field(key, value)
-    }.toList
-  }
+  override protected def fields(gauge: Gauge[T]): List[Field] = List(Field(ValueField, gauge.getValue))
+
+  override def withFieldFlatMap(fieldFM: (Field) => Option[Field]): GaugeCollector[T] = new GaugeCollector[T](fieldFM)
+}
+
+object GaugeCollector {
+  val ValueField = "value"
+
+  def apply[T](): GaugeCollector[T] = new GaugeCollector[T]()
 }

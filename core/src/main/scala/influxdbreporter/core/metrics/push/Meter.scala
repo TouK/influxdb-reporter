@@ -16,13 +16,13 @@
 package influxdbreporter.core.metrics.push
 
 import influxdbreporter.core.Tag
-import influxdbreporter.core.metrics.Metric.CodehaleMeter
+import influxdbreporter.core.metrics.Metric.CodahaleMeter
 
 import scala.annotation.varargs
 
-class Meter extends TagRelatedPushingMetric[CodehaleMeter] {
+class Meter extends TagRelatedPushingMetric[CodahaleMeter] {
 
-  override protected def createMetric(): CodehaleMeter = new CodehaleMeter()
+  override protected def createMetric(): CodahaleMeter = new CodahaleMeter()
 
   @varargs def mark(tags: Tag*): Unit = mark(1L, tags: _*)
 

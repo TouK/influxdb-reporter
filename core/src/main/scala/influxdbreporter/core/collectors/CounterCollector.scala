@@ -15,17 +15,24 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.metrics.Metric.CodehaleCounter
-import influxdbreporter.core.{Field, Tag, Writer, WriterData}
+import influxdbreporter.core.Field
+import influxdbreporter.core.metrics.Metric.CodahaleCounter
+import CounterCollector.CountField
 
-object CounterCollector extends MetricCollector[CodehaleCounter] {
+sealed class CounterCollector(fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleCounter, CounterCollector](fieldFM) {
 
-  override def collect[U](writer: Writer[U],
-                          name: String,
-                          metric: CodehaleCounter,
-                          timestamp: Long,
-                          tags: Tag*): WriterData[U] = {
-    val fields = List(Field("count", metric.getCount))
-    writer.write(s"$name.counter", fields, tags.toList, timestamp)
+  override protected def measurementName: String = "counter"
+
+  override protected def fields(metric: CodahaleCounter): List[Field] = List(Field(CountField, metric.getCount))
+
+  override def withFieldFlatMap(fieldFM: (Field) => Option[Field]): CounterCollector = {
+    new CounterCollector(fieldFM)
   }
+}
+
+object CounterCollector {
+  val CountField = "count"
+
+  def apply(): CounterCollector = new CounterCollector()
 }

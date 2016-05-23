@@ -16,18 +16,18 @@
 package influxdbreporter.core.metrics.pull
 
 import com.codahale.metrics.Gauge
-import influxdbreporter.core.metrics.Metric.CodehaleGauge
+import influxdbreporter.core.metrics.Metric.CodahaleGauge
 import influxdbreporter.core.metrics.MetricByTag.{InfluxdbTags, MetricByTags}
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class PullingGauge[V] extends Metric[CodehaleGauge[V]] {
-  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodehaleGauge[V]]] =
+abstract class PullingGauge[V] extends Metric[CodahaleGauge[V]] {
+  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodahaleGauge[V]]] =
     getValues.map {
       _.map {
         case ValueByTag(tags, value) =>
-          MetricByTag[CodehaleGauge[V]](tags, new Gauge[V] {
+          MetricByTag[CodahaleGauge[V]](tags, new Gauge[V] {
             override def getValue: V = value
           })
       }

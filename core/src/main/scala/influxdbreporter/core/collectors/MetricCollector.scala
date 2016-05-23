@@ -15,10 +15,32 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.metrics.Metric.CodehaleMetric
-import influxdbreporter.core.{Tag, Writer, WriterData}
+import influxdbreporter.core.metrics.Metric._
+import influxdbreporter.core.{Field, Tag, Writer, WriterData}
 
-trait MetricCollector[T <: CodehaleMetric] {
+trait MetricCollector[T <: CodahaleMetric] {
 
-  def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): WriterData[U]
+  def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): Option[WriterData[U]]
+}
+
+abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector[T, V]](fieldFM: Field => Option[Field])
+  extends MetricCollector[T] {
+
+  protected def measurementName: String
+
+  protected def fields(metric: T): List[Field]
+
+  def withFieldFlatMap(fieldFM: Field => Option[Field]): V
+
+  def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): Option[WriterData[U]] = {
+    filterFields(metric) match {
+      case Nil => None
+      case fields => Some(writer.write(s"$name.$measurementName", filterFields(metric), tags.toList, timestamp))
+    }
+  }
+
+  private def filterFields(metric: T): List[Field] = {
+    fields(metric).flatMap(f => fieldFM(f))
+  }
+
 }

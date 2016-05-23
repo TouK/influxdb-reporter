@@ -29,7 +29,7 @@ trait MetricRegistry {
 
   def unregister(name: String): Unit
 
-  def getMetricsMap: Map[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])]
+  def getMetricsMap: Map[String, (Metric[CodahaleMetric], MetricCollector[CodahaleMetric])]
 
 }
 
@@ -39,17 +39,17 @@ object MetricRegistry {
 
 private class MetricRegistryImpl(prefix: String) extends MetricRegistry {
 
-  private val metrics = TrieMap[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])]()
+  private val metrics = TrieMap[String, (Metric[CodahaleMetric], MetricCollector[CodahaleMetric])]()
 
-  def getMetricsMap: Map[String, (Metric[CodehaleMetric], MetricCollector[CodehaleMetric])] = metrics.toMap
+  def getMetricsMap: Map[String, (Metric[CodahaleMetric], MetricCollector[CodahaleMetric])] = metrics.toMap
 
   override def register[T](metricName: String, magnet: RegisterMagnet[T]): T = magnet(metricName, this)
 
-  def registerMetricWithCollector[T <: Metric[U], U <: CodehaleMetric](name: String, metric: T, collector: MetricCollector[U]): T = {
+  def registerMetricWithCollector[T <: Metric[U], U <: CodahaleMetric](name: String, metric: T, collector: MetricCollector[U]): T = {
     val metricName = createMetricName(name)
     val previouslyRegisteredMetric = metrics.putIfAbsent(
       metricName,
-      (metric.asInstanceOf[Metric[CodehaleMetric]], collector.asInstanceOf[MetricCollector[CodehaleMetric]])
+      (metric.asInstanceOf[Metric[CodahaleMetric]], collector.asInstanceOf[MetricCollector[CodahaleMetric]])
     )
     if (previouslyRegisteredMetric.isDefined)
       throw new IllegalArgumentException(s"Can't register metric. There is already defined metric for $metricName")
@@ -72,76 +72,76 @@ trait RegisterMagnet[T] {
 
 object RegisterMagnet {
 
-  private val registerMagnetForCounters = new RegisterMagnetFromMetric[Counter, CodehaleCounter]
-  private val registerMagnetForCodehaleCounters = new RegisterMagnetFromCodehaleMetric[CodehaleCounter]
-  private val registerMagnetForHistogram = new RegisterMagnetFromMetric[Histogram, CodehaleHistogram]
-  private val registerMagnetForCodehaleHistogram = new RegisterMagnetFromCodehaleMetric[CodehaleHistogram]
-  private val registerMagnetForMeter = new RegisterMagnetFromMetric[Meter, CodehaleMeter]
-  private val registerMagnetForCodehaleMeter = new RegisterMagnetFromCodehaleMetric[CodehaleMeter]
-  private val registerMagnetForTimer = new RegisterMagnetFromMetric[Timer, CodehaleTimer]
-  private val registerMagnetForCodehaleTimer = new RegisterMagnetFromCodehaleMetric[CodehaleTimer]
-  private def registerMagnetForGauge[T] = new RegisterMagnetFromMetric[DiscreteGauge[T], CodehaleGauge[T]]()
+  private val registerMagnetForCounters = new RegisterMagnetFromMetric[Counter, CodahaleCounter]
+  private val registerMagnetForCodehaleCounters = new RegisterMagnetFromCodehaleMetric[CodahaleCounter]
+  private val registerMagnetForHistogram = new RegisterMagnetFromMetric[Histogram, CodahaleHistogram]
+  private val registerMagnetForCodehaleHistogram = new RegisterMagnetFromCodehaleMetric[CodahaleHistogram]
+  private val registerMagnetForMeter = new RegisterMagnetFromMetric[Meter, CodahaleMeter]
+  private val registerMagnetForCodehaleMeter = new RegisterMagnetFromCodehaleMetric[CodahaleMeter]
+  private val registerMagnetForTimer = new RegisterMagnetFromMetric[Timer, CodahaleTimer]
+  private val registerMagnetForCodehaleTimer = new RegisterMagnetFromCodehaleMetric[CodahaleTimer]
+  private def registerMagnetForGauge[T] = new RegisterMagnetFromMetric[DiscreteGauge[T], CodahaleGauge[T]]()
 
   implicit def influxCounterToRegisterMagnet(counter: Counter): RegisterMagnet[Counter] = {
     registerMagnetForCounters(counter)
   }
 
-  implicit def influxCounterWithCollectorToRegisterMagnet(counterAndCollector: (Counter, MetricCollector[CodehaleCounter])):
+  implicit def influxCounterWithCollectorToRegisterMagnet(counterAndCollector: (Counter, MetricCollector[CodahaleCounter])):
   RegisterMagnet[Counter] = {
     val (counter, collector) = counterAndCollector
     registerMagnetForCounters(counter, Some(collector))
   }
 
-  implicit def counterToRegisterMagnet(counter: CodehaleCounter): RegisterMagnet[CodehaleCounter] = {
+  implicit def counterToRegisterMagnet(counter: CodahaleCounter): RegisterMagnet[CodahaleCounter] = {
     registerMagnetForCodehaleCounters(counter)
   }
 
-  implicit def counterWithCollectorToRegisterMagnet(counterAndCollector: (CodehaleCounter, MetricCollector[CodehaleCounter])):
-  RegisterMagnet[CodehaleCounter] = {
+  implicit def counterWithCollectorToRegisterMagnet(counterAndCollector: (CodahaleCounter, MetricCollector[CodahaleCounter])):
+  RegisterMagnet[CodahaleCounter] = {
     val (counter, collector) = counterAndCollector
     registerMagnetForCodehaleCounters(counter, Some(collector))
   }
 
-  implicit def pullingGaugeToRegisterMagnet[T](gauge: Metric[CodehaleGauge[T]]): RegisterMagnet[Metric[CodehaleGauge[T]]] = {
-    (new RegisterMagnetFromMetric[Metric[CodehaleGauge[T]], CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
+  implicit def pullingGaugeToRegisterMagnet[T](gauge: Metric[CodahaleGauge[T]]): RegisterMagnet[Metric[CodahaleGauge[T]]] = {
+    (new RegisterMagnetFromMetric[Metric[CodahaleGauge[T]], CodahaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
   }
 
   implicit def discreteGaugeToRegisterMagnet[T](gauge: DiscreteGauge[T]): RegisterMagnet[DiscreteGauge[T]] = {
     registerMagnetForGauge[T].apply(gauge)
   }
 
-  implicit def discreteGaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (DiscreteGauge[T], MetricCollector[CodehaleGauge[T]])):
+  implicit def discreteGaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (DiscreteGauge[T], MetricCollector[CodahaleGauge[T]])):
   RegisterMagnet[DiscreteGauge[T]] = {
     val (gauge, collector) = gaugeAndCollector
     registerMagnetForGauge[T].apply(gauge, Some(collector))
   }
 
-  implicit def gaugeToRegisterMagnet[T](gauge: CodehaleGauge[T]): RegisterMagnet[CodehaleGauge[T]] = {
-    (new RegisterMagnetFromCodehaleMetric[CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
+  implicit def gaugeToRegisterMagnet[T](gauge: CodahaleGauge[T]): RegisterMagnet[CodahaleGauge[T]] = {
+    (new RegisterMagnetFromCodehaleMetric[CodahaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge)
   }
 
-  implicit def gaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (CodehaleGauge[T], MetricCollector[CodehaleGauge[T]])):
-  RegisterMagnet[CodehaleGauge[T]] = {
+  implicit def gaugeWithCollectorToRegisterMagnet[T](gaugeAndCollector: (CodahaleGauge[T], MetricCollector[CodahaleGauge[T]])):
+  RegisterMagnet[CodahaleGauge[T]] = {
     val (gauge, collector) = gaugeAndCollector
-    (new RegisterMagnetFromCodehaleMetric[CodehaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge, Some(collector))
+    (new RegisterMagnetFromCodehaleMetric[CodahaleGauge[T]]()(CollectorOps.CollectorForGauge[T]))(gauge, Some(collector))
   }
 
   implicit def influxHistogramToRegisterMagnet(histogram: Histogram): RegisterMagnet[Histogram] = {
     registerMagnetForHistogram(histogram)
   }
 
-  implicit def influxHistogramWithCollectorToRegisterMagnet(nameAndHistogramAndCollector: (Histogram, MetricCollector[CodehaleHistogram])):
+  implicit def influxHistogramWithCollectorToRegisterMagnet(nameAndHistogramAndCollector: (Histogram, MetricCollector[CodahaleHistogram])):
   RegisterMagnet[Histogram] = {
     val (histogram, collector) = nameAndHistogramAndCollector
     registerMagnetForHistogram(histogram, Some(collector))
   }
 
-  implicit def histogramToRegisterMagnet(histogram: CodehaleHistogram): RegisterMagnet[CodehaleHistogram] = {
+  implicit def histogramToRegisterMagnet(histogram: CodahaleHistogram): RegisterMagnet[CodahaleHistogram] = {
     registerMagnetForCodehaleHistogram(histogram)
   }
 
-  implicit def histogramWithCollectorToRegisterMagnet(histogramAndCollector: (CodehaleHistogram, MetricCollector[CodehaleHistogram])):
-  RegisterMagnet[CodehaleHistogram] = {
+  implicit def histogramWithCollectorToRegisterMagnet(histogramAndCollector: (CodahaleHistogram, MetricCollector[CodahaleHistogram])):
+  RegisterMagnet[CodahaleHistogram] = {
     val (histogram, collector) = histogramAndCollector
     registerMagnetForCodehaleHistogram(histogram, Some(collector))
   }
@@ -150,18 +150,18 @@ object RegisterMagnet {
     registerMagnetForMeter(meter)
   }
 
-  implicit def influxMeterWithCollectorToRegisterMagnet(meterAndCollector: (Meter, MetricCollector[CodehaleMeter])):
+  implicit def influxMeterWithCollectorToRegisterMagnet(meterAndCollector: (Meter, MetricCollector[CodahaleMeter])):
   RegisterMagnet[Meter] = {
     val (meter, collector) = meterAndCollector
     registerMagnetForMeter(meter, Some(collector))
   }
 
-  implicit def meterToRegisterMagnet(meter: CodehaleMeter): RegisterMagnet[CodehaleMeter] = {
+  implicit def meterToRegisterMagnet(meter: CodahaleMeter): RegisterMagnet[CodahaleMeter] = {
     registerMagnetForCodehaleMeter(meter)
   }
 
-  implicit def meterWithCollectorToRegisterMagnet(meterAndCollector: (CodehaleMeter, MetricCollector[CodehaleMeter])):
-  RegisterMagnet[CodehaleMeter] = {
+  implicit def meterWithCollectorToRegisterMagnet(meterAndCollector: (CodahaleMeter, MetricCollector[CodahaleMeter])):
+  RegisterMagnet[CodahaleMeter] = {
     val (meter, collector) = meterAndCollector
     registerMagnetForCodehaleMeter(meter, Some(collector))
   }
@@ -170,23 +170,23 @@ object RegisterMagnet {
     registerMagnetForTimer(timer)
   }
 
-  implicit def influxTimerWithCollectorToRegisterMagnet(timerAndCollector: (Timer, MetricCollector[CodehaleTimer])):
+  implicit def influxTimerWithCollectorToRegisterMagnet(timerAndCollector: (Timer, MetricCollector[CodahaleTimer])):
   RegisterMagnet[Timer] = {
     val (timer, collector) = timerAndCollector
     registerMagnetForTimer(timer, Some(collector))
   }
 
-  implicit def timerToRegisterMagnet(timer: CodehaleTimer): RegisterMagnet[CodehaleTimer] = {
+  implicit def timerToRegisterMagnet(timer: CodahaleTimer): RegisterMagnet[CodahaleTimer] = {
     registerMagnetForCodehaleTimer(timer)
   }
 
-  implicit def timerWithCollectorToRegisterMagnet(timerAndCollector: (CodehaleTimer, MetricCollector[CodehaleTimer])):
-  RegisterMagnet[CodehaleTimer] = {
+  implicit def timerWithCollectorToRegisterMagnet(timerAndCollector: (CodahaleTimer, MetricCollector[CodahaleTimer])):
+  RegisterMagnet[CodahaleTimer] = {
     val (timer, collector) = timerAndCollector
     registerMagnetForCodehaleTimer(timer, Some(collector))
   }
 
-  private class RegisterMagnetFromMetric[U <: Metric[T], T <: CodehaleMetric](implicit co: CollectorOps[T]) {
+  private class RegisterMagnetFromMetric[U <: Metric[T], T <: CodahaleMetric](implicit co: CollectorOps[T]) {
 
     def apply(metric: U, collector: Option[MetricCollector[T]] = None): RegisterMagnet[U] =
       new RegisterMagnet[U] {
@@ -195,7 +195,7 @@ object RegisterMagnet {
       }
   }
 
-  private class RegisterMagnetFromCodehaleMetric[T <: CodehaleMetric](implicit co: CollectorOps[T]) {
+  private class RegisterMagnetFromCodehaleMetric[T <: CodahaleMetric](implicit co: CollectorOps[T]) {
 
     def apply(metric: T, collector: Option[MetricCollector[T]] = None): RegisterMagnet[T] =
       new RegisterMagnet[T] {

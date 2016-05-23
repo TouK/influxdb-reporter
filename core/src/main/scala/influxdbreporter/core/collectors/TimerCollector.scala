@@ -15,45 +15,69 @@
  */
 package influxdbreporter.core.collectors
 
-import java.util.concurrent.TimeUnit
+import influxdbreporter.core.Field
+import influxdbreporter.core.collectors.TimerCollector._
+import influxdbreporter.core.metrics.Metric.CodahaleTimer
 
-import influxdbreporter.core.metrics.Metric.CodehaleTimer
-import influxdbreporter.core.{Field, Tag, Writer, WriterData}
+import scala.concurrent.duration.{TimeUnit, _}
 
-import scala.concurrent.duration._
+sealed class TimerCollector(timeUnit: TimeUnit,
+                            fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleTimer, TimerCollector](fieldFM) {
 
-class TimerCollector(timeUnit: TimeUnit) extends MetricCollector[CodehaleTimer] {
+  override protected def measurementName: String = "timer"
 
-  override def collect[U](writer: Writer[U], name: String, metric: CodehaleTimer, timestamp: Long, tags: Tag*): WriterData[U] =
-    writer.write(s"$name.timer", fields(metric), tags.toList, timestamp)
-
-  private def fields(timer: CodehaleTimer): List[Field] = {
+  override protected def fields(timer: CodahaleTimer): List[Field] = {
     val snapshot = timer.getSnapshot
     Map(
-      "count" -> snapshot.size,
-      "min" -> convertToOtherTimeUnit(snapshot.getMin, NANOSECONDS, timeUnit),
-      "max" -> convertToOtherTimeUnit(snapshot.getMax, NANOSECONDS, timeUnit),
-      "mean" -> convertToOtherTimeUnit(snapshot.getMean, NANOSECONDS, timeUnit),
-      "std-dev" -> convertToOtherTimeUnit(snapshot.getStdDev, NANOSECONDS, timeUnit),
-      "50-percentile" -> convertToOtherTimeUnit(snapshot.getMedian, NANOSECONDS, timeUnit),
-      "75-percentile" -> convertToOtherTimeUnit(snapshot.get75thPercentile(), NANOSECONDS, timeUnit),
-      "95-percentile" -> convertToOtherTimeUnit(snapshot.get95thPercentile(), NANOSECONDS, timeUnit),
-      "99-percentile" -> convertToOtherTimeUnit(snapshot.get99thPercentile(), NANOSECONDS, timeUnit),
-      "999-percentile" -> convertToOtherTimeUnit(snapshot.get999thPercentile(), NANOSECONDS, timeUnit),
-      "one-minute" -> convertToOtherTimeUnit(timer.getOneMinuteRate, SECONDS, timeUnit),
-      "five-minute" -> convertToOtherTimeUnit(timer.getFiveMinuteRate, SECONDS, timeUnit),
-      "fifteen-minute" -> convertToOtherTimeUnit(timer.getFifteenMinuteRate, SECONDS, timeUnit),
-      "mean-rate" -> convertToOtherTimeUnit(timer.getMeanRate, SECONDS, timeUnit),
-      "run-count" -> timer.getCount
+      CountField -> snapshot.size,
+      MinField -> convertToOtherTimeUnit(snapshot.getMin, NANOSECONDS, timeUnit),
+      MaxField -> convertToOtherTimeUnit(snapshot.getMax, NANOSECONDS, timeUnit),
+      MeanField -> convertToOtherTimeUnit(snapshot.getMean, NANOSECONDS, timeUnit),
+      StdDevField -> convertToOtherTimeUnit(snapshot.getStdDev, NANOSECONDS, timeUnit),
+      Percentile50Field -> convertToOtherTimeUnit(snapshot.getMedian, NANOSECONDS, timeUnit),
+      Percentile75Field -> convertToOtherTimeUnit(snapshot.get75thPercentile(), NANOSECONDS, timeUnit),
+      Percentile95Field -> convertToOtherTimeUnit(snapshot.get95thPercentile(), NANOSECONDS, timeUnit),
+      Percentile99Field -> convertToOtherTimeUnit(snapshot.get99thPercentile(), NANOSECONDS, timeUnit),
+      Percentile999Field -> convertToOtherTimeUnit(snapshot.get999thPercentile(), NANOSECONDS, timeUnit),
+      OneMinuteField -> convertToOtherTimeUnit(timer.getOneMinuteRate, SECONDS, timeUnit),
+      FiveMinuteField -> convertToOtherTimeUnit(timer.getFiveMinuteRate, SECONDS, timeUnit),
+      FifteenMinuteField -> convertToOtherTimeUnit(timer.getFifteenMinuteRate, SECONDS, timeUnit),
+      MeanRateField -> convertToOtherTimeUnit(timer.getMeanRate, SECONDS, timeUnit),
+      RunCountField -> timer.getCount
     ).map {
       case (key, value) => Field(key, value)
     }.toList
+  }
+
+  def withFieldFlatMap(fieldFM: Field => Option[Field]): TimerCollector = {
+    new TimerCollector(timeUnit, fieldFM)
   }
 
   private def convertToOtherTimeUnit(value: Double, oldTimeUnit: TimeUnit, newTimeUnit: TimeUnit): Double = {
     if (oldTimeUnit != newTimeUnit) Duration(value, oldTimeUnit).toUnit(newTimeUnit)
     else value
   }
+}
+
+object TimerCollector {
+  val CountField = "count"
+  val MinField = "min"
+  val MaxField = "max"
+  val MeanField = "mean"
+  val StdDevField = "std-dev"
+  val Percentile50Field = "50-percentile"
+  val Percentile75Field = "75-percentile"
+  val Percentile95Field = "95-percentile"
+  val Percentile99Field = "99-percentile"
+  val Percentile999Field = "999-percentile"
+  val OneMinuteField = "one-minute"
+  val FiveMinuteField = "five-minute"
+  val FifteenMinuteField = "fifteen-minute"
+  val MeanRateField = "mean-rate"
+  val RunCountField = "run-count"
+
+  def apply(timeUnit: TimeUnit): TimerCollector = new TimerCollector(timeUnit)
 }
 
 object SecondTimerCollector extends TimerCollector(SECONDS)

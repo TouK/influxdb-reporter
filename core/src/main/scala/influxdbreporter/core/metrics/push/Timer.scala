@@ -27,7 +27,7 @@ sealed trait TimerContext {
   def stop()
 }
 
-class Timer extends TagRelatedPushingMetric[CodehaleTimer] {
+class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
 
   @varargs def time(tags: Tag*): TimerContext = new InfluxTimerContextImpl(tags.toList, this)
 
@@ -35,7 +35,7 @@ class Timer extends TagRelatedPushingMetric[CodehaleTimer] {
     increaseMetric(tags.toList, _.update(time, unit))
   }
 
-  override protected def createMetric(): CodehaleTimer = new CodehaleTimer()
+  override protected def createMetric(): CodahaleTimer = new CodahaleTimer()
 
   private def notify(tags: List[Tag], time: Long): Unit =
     increaseMetric(tags, _.update(time, TimeUnit.NANOSECONDS))

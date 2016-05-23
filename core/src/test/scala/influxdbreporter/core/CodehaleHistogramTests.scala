@@ -18,7 +18,7 @@ package influxdbreporter.core
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.ExponentiallyDecayingReservoir
-import influxdbreporter.core.metrics.Metric.CodehaleHistogram
+import influxdbreporter.core.metrics.Metric.CodahaleHistogram
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -26,7 +26,7 @@ class CodehaleHistogramTests extends BaseMetricTest {
 
   "A CodehaleHistogram metric integration test" in {
     val registry = MetricRegistry("test")
-    val registeredHistogram = registry.register("myhistogram", new CodehaleHistogram(new ExponentiallyDecayingReservoir))
+    val registeredHistogram = registry.register("myhistogram", new CodahaleHistogram(new ExponentiallyDecayingReservoir))
 
     val mockWriter = createMockWriter(onPhaseChange(registeredHistogram), assertPhase)
     val mockClient = createMockMetricClient(mockWriter)
@@ -37,7 +37,7 @@ class CodehaleHistogramTests extends BaseMetricTest {
     task.stop()
   }
 
-  private def onPhaseChange(registeredHistogram: CodehaleHistogram): PhaseChangeAction = {
+  private def onPhaseChange(registeredHistogram: CodahaleHistogram): PhaseChangeAction = {
     case PhaseOne =>
       registeredHistogram.update(3)
       registeredHistogram.update(1)

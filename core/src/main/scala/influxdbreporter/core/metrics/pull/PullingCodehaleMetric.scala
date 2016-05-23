@@ -16,12 +16,12 @@
 package influxdbreporter.core.metrics.pull
 
 import influxdbreporter.core.metrics.{MetricByTag, Metric}
-import influxdbreporter.core.metrics.Metric.CodehaleMetric
+import influxdbreporter.core.metrics.Metric.CodahaleMetric
 import influxdbreporter.core.metrics.MetricByTag.MetricByTags
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PullingCodehaleMetric[T <: CodehaleMetric](underlying: T) extends Metric[T] {
+class PullingCodehaleMetric[T <: CodahaleMetric](underlying: T) extends Metric[T] {
 
   override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]] = {
     Future.successful(List(MetricByTag(List.empty, underlying)))
