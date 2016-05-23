@@ -30,7 +30,9 @@ object LineProtocolWriter extends Writer[String] {
     }
 
   private def tagsToString(tags: List[Tag]): String =
-    tags.map(tag => (formatLinePart(tag.key), formatKeyValueIfValueIsCorrect(tag.value)))
+    tags
+      .sortBy(_.key)(Ordering[String].reverse)
+      .map(tag => (formatLinePart(tag.key), formatKeyValueIfValueIsCorrect(tag.value)))
       .foldLeft(List.empty[String]) {
         case (acc, (formattedTagKey, Some(formattedTagVaue))) => s""",$formattedTagKey=$formattedTagVaue""" :: acc
         case (acc, _) => acc
