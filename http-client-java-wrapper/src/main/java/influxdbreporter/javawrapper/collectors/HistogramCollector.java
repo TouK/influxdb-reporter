@@ -16,6 +16,6 @@ public class HistogramCollector implements MetricCollector<Histogram> {
     }
 
     public influxdbreporter.core.collectors.HistogramCollector convertToScalaCollector() {
-        return COLLECTOR.withFieldFlatMap(converter.mapperToScalaFunction1());
+        return COLLECTOR.withFieldMapper(converter.mapperToScalaFunction1());
     }
 }

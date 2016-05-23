@@ -26,8 +26,8 @@ sealed class CounterCollector(fieldFM: Field => Option[Field] = t => Some(t))
 
   override protected def fields(metric: CodahaleCounter): List[Field] = List(Field(CountField, metric.getCount))
 
-  override def withFieldFlatMap(fieldFM: (Field) => Option[Field]): CounterCollector = {
-    new CounterCollector(fieldFM)
+  override def withFieldMapper(mapper: (Field) => Option[Field]): CounterCollector = {
+    new CounterCollector(mapper)
   }
 }
 

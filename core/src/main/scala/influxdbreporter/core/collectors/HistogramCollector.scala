@@ -44,8 +44,8 @@ sealed class HistogramCollector(fieldFM: Field => Option[Field] = t => Some(t))
     }.toList
   }
 
-  override def withFieldFlatMap(fieldFM: (Field) => Option[Field]): HistogramCollector = {
-    new HistogramCollector(fieldFM)
+  override def withFieldMapper(mapper: (Field) => Option[Field]): HistogramCollector = {
+    new HistogramCollector(mapper)
   }
 }
 

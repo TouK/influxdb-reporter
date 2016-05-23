@@ -16,6 +16,6 @@ public class CounterCollector implements MetricCollector<Counter> {
     }
 
     public influxdbreporter.core.collectors.CounterCollector convertToScalaCollector() {
-        return COLLECTOR.withFieldFlatMap(converter.mapperToScalaFunction1());
+        return COLLECTOR.withFieldMapper(converter.mapperToScalaFunction1());
     }
 }

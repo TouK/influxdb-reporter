@@ -16,6 +16,6 @@ public class MeterCollector implements MetricCollector<Meter> {
     }
 
     public influxdbreporter.core.collectors.MeterCollector convertToScalaCollector() {
-        return COLLECTOR.withFieldFlatMap(converter.mapperToScalaFunction1());
+        return COLLECTOR.withFieldMapper(converter.mapperToScalaFunction1());
     }
 }

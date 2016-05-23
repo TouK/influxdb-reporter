@@ -50,8 +50,8 @@ sealed class TimerCollector(timeUnit: TimeUnit,
     }.toList
   }
 
-  def withFieldFlatMap(fieldFM: Field => Option[Field]): TimerCollector = {
-    new TimerCollector(timeUnit, fieldFM)
+  def withFieldMapper(mapper: Field => Option[Field]): TimerCollector = {
+    new TimerCollector(timeUnit, mapper)
   }
 
   private def convertToOtherTimeUnit(value: Double, oldTimeUnit: TimeUnit, newTimeUnit: TimeUnit): Double = {

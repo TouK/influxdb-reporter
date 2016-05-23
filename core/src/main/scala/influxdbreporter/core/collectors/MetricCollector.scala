@@ -23,14 +23,14 @@ trait MetricCollector[T <: CodahaleMetric] {
   def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): Option[WriterData[U]]
 }
 
-abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector[T, V]](fieldFM: Field => Option[Field])
+abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector[T, V]](mapper: Field => Option[Field])
   extends MetricCollector[T] {
 
   protected def measurementName: String
 
   protected def fields(metric: T): List[Field]
 
-  def withFieldFlatMap(fieldFM: Field => Option[Field]): V
+  def withFieldMapper(mapper: Field => Option[Field]): V
 
   def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): Option[WriterData[U]] = {
     filterFields(metric) match {
@@ -40,7 +40,7 @@ abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector
   }
 
   private def filterFields(metric: T): List[Field] = {
-    fields(metric).flatMap(f => fieldFM(f))
+    fields(metric).flatMap(f => mapper(f))
   }
 
 }

@@ -26,7 +26,7 @@ sealed class GaugeCollector[T](fieldFM: Field => Option[Field] = t => Some(t))
 
   override protected def fields(gauge: Gauge[T]): List[Field] = List(Field(ValueField, gauge.getValue))
 
-  override def withFieldFlatMap(fieldFM: (Field) => Option[Field]): GaugeCollector[T] = new GaugeCollector[T](fieldFM)
+  override def withFieldMapper(mapper: (Field) => Option[Field]): GaugeCollector[T] = new GaugeCollector[T](mapper)
 }
 
 object GaugeCollector {

@@ -44,7 +44,7 @@ class TimerCollectorTests extends WordSpec with MockFactory {
     "write filtered list of fields when collector was properly configured" in {
       val removedFieldKeys = Percentile50Field :: Percentile75Field :: Percentile95Field :: Percentile99Field :: Percentile999Field :: Nil
       val filteredFields = timerFields.filter(f => !removedFieldKeys.contains(f.key))
-      val collector = SecondTimerCollector.withFieldFlatMap { field =>
+      val collector = SecondTimerCollector.withFieldMapper { field =>
         if (removedFieldKeys.contains(field.key)) None
         else Some(field)
       }
@@ -55,7 +55,7 @@ class TimerCollectorTests extends WordSpec with MockFactory {
     }
 
     "write fields with changed field name and value when collector was properly configured" in {
-      val collector = SecondTimerCollector.withFieldFlatMap { field =>
+      val collector = SecondTimerCollector.withFieldMapper { field =>
         if (field.key == RunCountField) {
           val value = field.value match {
             case i: Number => i.doubleValue()
@@ -77,7 +77,7 @@ class TimerCollectorTests extends WordSpec with MockFactory {
     }
 
     "return None when all fields was filtered" in {
-      val collector = SecondTimerCollector.withFieldFlatMap(_ => None)
+      val collector = SecondTimerCollector.withFieldMapper(_ => None)
       assertResult(None) {
         collector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
       }

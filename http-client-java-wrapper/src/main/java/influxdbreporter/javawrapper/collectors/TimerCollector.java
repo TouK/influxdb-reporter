@@ -17,6 +17,6 @@ public class TimerCollector implements MetricCollector<Timer> {
     }
 
     public influxdbreporter.core.collectors.TimerCollector convertToScalaCollector() {
-        return COLLECTOR.withFieldFlatMap(converter.mapperToScalaFunction1());
+        return COLLECTOR.withFieldMapper(converter.mapperToScalaFunction1());
     }
 }
