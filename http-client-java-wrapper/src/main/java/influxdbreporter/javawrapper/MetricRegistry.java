@@ -18,12 +18,12 @@ package influxdbreporter.javawrapper;
 import influxdbreporter.core.MetricRegistry$;
 import influxdbreporter.core.MetricRegistryImpl;
 import influxdbreporter.core.RegisterMagnet;
-import influxdbreporter.core.collectors.*;
 import influxdbreporter.core.metrics.*;
 import influxdbreporter.core.metrics.push.Counter;
 import influxdbreporter.core.metrics.push.Histogram;
 import influxdbreporter.core.metrics.push.Meter;
 import influxdbreporter.core.metrics.push.Timer;
+import influxdbreporter.javawrapper.collectors.*;
 
 public class MetricRegistry {
 
@@ -39,7 +39,11 @@ public class MetricRegistry {
                 new RegisterMagnet<T>() {
                     @Override
                     public T apply(final String name, MetricRegistryImpl registryImpl) {
-                        return registryImpl.registerMetricWithCollector(name, metric, (MetricCollector<U>) metricCollectorOfMetric(metric));
+                        return registryImpl.registerMetricWithCollector(
+                                name,
+                                metric,
+                                (influxdbreporter.core.collectors.MetricCollector<U>) metricCollectorOfMetric(metric)
+                        );
                     }
                 });
     }
@@ -52,7 +56,11 @@ public class MetricRegistry {
                 new RegisterMagnet<T>() {
                     @Override
                     public T apply(final String name, MetricRegistryImpl registryImpl) {
-                        return registryImpl.registerMetricWithCollector(name, metric, collector);
+                        return registryImpl.registerMetricWithCollector(
+                                name,
+                                metric,
+                                collector.convertToScalaCollector()
+                        );
                     }
                 });
     }
@@ -61,11 +69,11 @@ public class MetricRegistry {
         scalaRegistry.unregister(name);
     }
 
-    private MetricCollector<? extends com.codahale.metrics.Metric> metricCollectorOfMetric(Metric metric) {
-        if (metric instanceof Counter) return CounterCollector.apply();
-        else if (metric instanceof Histogram) return HistogramCollector.apply();
-        else if (metric instanceof Meter) return MeterCollector.apply();
-        else if (metric instanceof Timer) return SecondTimerCollector$.MODULE$;
+    private influxdbreporter.core.collectors.MetricCollector<? extends com.codahale.metrics.Metric> metricCollectorOfMetric(Metric metric) {
+        if (metric instanceof Counter) return CounterCollector.COLLECTOR;
+        else if (metric instanceof Histogram) return HistogramCollector.COLLECTOR;
+        else if (metric instanceof Meter) return MeterCollector.COLLECTOR;
+        else if (metric instanceof Timer) return TimerCollector.COLLECTOR;
         else throw new IllegalArgumentException("Unknown metric type: " + metric.getClass().getName());
     }
 }
