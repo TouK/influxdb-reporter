@@ -33,4 +33,6 @@ public class HistogramCollector implements MetricCollector<Histogram> {
     public influxdbreporter.core.collectors.HistogramCollector convertToScalaCollector() {
         return COLLECTOR.withFieldMapper(converter.mapperToScalaFunction1());
     }
+
+    scala.Int
 }

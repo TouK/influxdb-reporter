@@ -45,8 +45,11 @@ class TimerCollectorTests extends WordSpec with MockFactory {
       val removedFieldKeys = Percentile50Field :: Percentile75Field :: Percentile95Field :: Percentile99Field :: Percentile999Field :: Nil
       val filteredFields = timerFields.filter(f => !removedFieldKeys.contains(f.key))
       val collector = SecondTimerCollector.withFieldMapper { field =>
-        if (removedFieldKeys.contains(field.key)) None
-        else Some(field)
+        if (removedFieldKeys.contains(field.key)) {
+          None
+        } else {
+          Some(field)
+        }
       }
       (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
         .expects(measurementName, filteredFields, tagList, timestamp)
@@ -62,8 +65,9 @@ class TimerCollectorTests extends WordSpec with MockFactory {
             case _ => 0.0
           }
           Some(Field(field.key, value))
+        } else {
+          Some(field)
         }
-        else Some(field)
       }
 
       (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
@@ -85,5 +89,6 @@ class TimerCollectorTests extends WordSpec with MockFactory {
   }
 
   private def fieldD(key: String) = new Field(key, 0.0)
+
   private def fieldI(key: String) = new Field(key, 0)
 }

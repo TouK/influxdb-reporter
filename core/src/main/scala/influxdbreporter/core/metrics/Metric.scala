@@ -25,7 +25,7 @@ trait Metric[T <: CodahaleMetric] {
 
   def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[T]]
 
-  def map[NT <: CodahaleMetric](f: T => NT) = new Metric[NT] {
+  def map[NT <: CodahaleMetric](f: T => NT): Metric[NT] = new Metric[NT] {
     override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[NT]] =
       Metric.this.popMetrics.map { metrics =>
         metrics.map { metric =>
@@ -34,7 +34,7 @@ trait Metric[T <: CodahaleMetric] {
       }
   }
 
-  def mapAll[NT <: CodahaleMetric](f: MetricByTags[T] => MetricByTags[NT]) = new Metric[NT] {
+  def mapAll[NT <: CodahaleMetric](f: MetricByTags[T] => MetricByTags[NT]): Metric[NT] = new Metric[NT] {
     override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[NT]] =
       Metric.this.popMetrics.map(f)
   }
