@@ -47,8 +47,8 @@ lazy val httpClient = project.in(file("http-client"))
   .settings(
     name := "influxdb-reporter-http-client",
     libraryDependencies ++= {
-      val typesafeConfigV = "1.3.0"
-      val dispatchV = "0.11.2"
+      val typesafeConfigV     = "1.3.0"
+      val dispatchV           = "0.11.2"
 
       Seq(
         "com.typesafe"                 % "config"               % typesafeConfigV,
@@ -62,7 +62,14 @@ lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
   .settings(commonSettings)
   .settings(
     name := "influxdb-reporter-http-client-java-wrapper",
-    javacOptions in doc := Seq("-source", "1.7")
+    javacOptions in doc := Seq("-source", "1.7"),
+    libraryDependencies ++= {
+      val findbugsV = "3.0.1"
+
+      Seq(
+        "com.google.code.findbugs"      % "jsr305"              % findbugsV
+      )
+    }
   )
   .dependsOn(httpClient)
 
