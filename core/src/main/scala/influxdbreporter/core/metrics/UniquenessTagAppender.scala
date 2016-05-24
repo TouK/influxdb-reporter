@@ -16,14 +16,14 @@
 package influxdbreporter.core.metrics
 
 import influxdbreporter.core.Tag
-import influxdbreporter.core.metrics.Metric.CodehaleMetric
+import influxdbreporter.core.metrics.Metric.CodahaleMetric
 import influxdbreporter.core.metrics.MetricByTag.MetricByTags
 
 // read more:
 // https://github.com/influxdata/docs.influxdata.com/blob/master/content/influxdb/v0.9/concepts/08_vs_09.md#points-with-identical-timestamps
 protected trait UniquenessTagAppender {
 
-  protected def mapListByAddingUniqueTagToEachMetric[U <: CodehaleMetric](metricByTags: MetricByTags[U]): MetricByTags[U] = {
+  protected def mapListByAddingUniqueTagToEachMetric[U <: CodahaleMetric](metricByTags: MetricByTags[U]): MetricByTags[U] = {
     metricByTags.zipWithIndex.map {
       case (metricByTag, idx) =>
         metricByTag.copy[U](tags = Tag("u", idx) :: metricByTag.tags)

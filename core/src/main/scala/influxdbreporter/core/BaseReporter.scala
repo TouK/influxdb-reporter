@@ -71,14 +71,16 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
     }
   }
 
-  private def collectMetrics[M <: CodehaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]] = {
+  private def collectMetrics[M <: CodahaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]] = {
     val timestamp = clock.getTick
     Future.sequence(metrics.toList.map {
       case (name, (metric, collector)) =>
         metric.popMetrics.map {
-          _.map {
+          _.flatMap {
             case MetricByTag(tags, m, timestampOpt) =>
-              collector.collect(writer, name, m, timestampOpt.getOrElse(timestamp), tags: _*)
+              val result = collector.collect(writer, name, m, timestampOpt.getOrElse(timestamp), tags: _*)
+              if(result.isEmpty) logger.warn(s"Metric $name was skipped because collector returns nothing")
+              result
           }
         }
     }).map(listOfLists => listOfLists.flatten)

@@ -20,7 +20,7 @@ import influxdbreporter.core.metrics.Metric._
 
 import scala.annotation.varargs
 
-class Counter extends TagRelatedPushingMetric[CodehaleCounter] {
+class Counter extends TagRelatedPushingMetric[CodahaleCounter] {
 
   @varargs def inc(tags: Tag*): Unit = increaseMetric(tags.toList, _.inc(1))
 
@@ -30,5 +30,5 @@ class Counter extends TagRelatedPushingMetric[CodehaleCounter] {
 
   @varargs def dec(n: Long, tags: Tag*): Unit = increaseMetric(tags.toList, _.dec(n))
 
-  override protected def createMetric(): CodehaleCounter = new CodehaleCounter
+  override protected def createMetric(): CodahaleCounter = new CodahaleCounter
 }

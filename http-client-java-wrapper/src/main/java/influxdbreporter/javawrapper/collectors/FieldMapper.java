@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core.metrics.push
+package influxdbreporter.javawrapper.collectors;
 
-import influxdbreporter.core.Tag
-import influxdbreporter.core.metrics.Metric.CodahaleMeter
+import influxdbreporter.core.Field;
 
-import scala.annotation.varargs
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-class Meter extends TagRelatedPushingMetric[CodahaleMeter] {
-
-  override protected def createMetric(): CodahaleMeter = new CodahaleMeter()
-
-  @varargs def mark(tags: Tag*): Unit = mark(1L, tags: _*)
-
-  @varargs def mark(n: Long,tags: Tag*): Unit = increaseMetric(tags.toList, _.mark(n))
+public interface FieldMapper {
+    @Nullable
+    Field map(@Nonnull Field field);
 }

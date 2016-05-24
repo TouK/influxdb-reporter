@@ -15,35 +15,53 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.metrics.Metric.CodehaleHistogram
-import influxdbreporter.core.{Field, Tag, Writer, WriterData}
+import influxdbreporter.core.Field
+import influxdbreporter.core.metrics.Metric.CodahaleHistogram
+import HistogramCollector._
 
-object HistogramCollector extends MetricCollector[CodehaleHistogram] {
+sealed class HistogramCollector(fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleHistogram, HistogramCollector](fieldFM) {
 
-  override def collect[U](writer: Writer[U],
-                          name: String,
-                          metric: CodehaleHistogram,
-                          timestamp: Long,
-                          tags: Tag*): WriterData[U] =
-    writer.write(s"$name.histogram", fields(metric), tags.toList, timestamp)
+  override protected def measurementName: String = "histogram"
 
-  private def fields(histogram: CodehaleHistogram): List[Field] = {
+  override protected def fields(histogram: CodahaleHistogram): List[Field] = {
     val snapshot = histogram.getSnapshot
     Map(
-      "count" -> snapshot.size,
-      "min" -> snapshot.getMin,
-      "max" -> snapshot.getMax,
-      "mean" -> snapshot.getMean,
-      "median" -> snapshot.getMedian,
-      "std-dev" -> snapshot.getStdDev,
-      "50-percentile" -> snapshot.getMedian,
-      "75-percentile" -> snapshot.get75thPercentile(),
-      "95-percentile" -> snapshot.get95thPercentile(),
-      "99-percentile" -> snapshot.get99thPercentile(),
-      "999-percentile" -> snapshot.get999thPercentile(),
-      "run-count" -> histogram.getCount
+      CountField -> snapshot.size,
+      MinField -> snapshot.getMin,
+      MaxField -> snapshot.getMax,
+      MeanField -> snapshot.getMean,
+      MedianField -> snapshot.getMedian,
+      StdDevField -> snapshot.getStdDev,
+      Percentile50Field -> snapshot.getMedian,
+      Percentile75Field -> snapshot.get75thPercentile(),
+      Percentile95Field -> snapshot.get95thPercentile(),
+      Percentile99Field -> snapshot.get99thPercentile(),
+      Percentile999Field -> snapshot.get999thPercentile(),
+      RunCountField -> histogram.getCount
     ).map {
       case (key, value) => Field(key, value)
     }.toList
   }
+
+  override def withFieldMapper(mapper: (Field) => Option[Field]): HistogramCollector = {
+    new HistogramCollector(mapper)
+  }
+}
+
+object HistogramCollector {
+  val CountField = "count"
+  val MinField = "min"
+  val MaxField = "max"
+  val MeanField = "mean"
+  val MedianField = "median"
+  val StdDevField = "std-dev"
+  val Percentile50Field = "50-percentile"
+  val Percentile75Field = "75-percentile"
+  val Percentile95Field = "95-percentile"
+  val Percentile99Field = "99-percentile"
+  val Percentile999Field = "999-percentile"
+  val RunCountField = "run-count"
+
+  def apply(): HistogramCollector = new HistogramCollector()
 }

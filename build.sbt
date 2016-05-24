@@ -29,14 +29,16 @@ lazy val core = project.in(file("core"))
   .settings(
     name := "influxdb-reporter-core",
     libraryDependencies ++= {
-      val dropwizardMetricsV = "3.1.2"
-      val scalaLogging = "2.1.2"
-      val scalaTestV = "2.2.6"
+      val dropwizardMetricsV  = "3.1.2"
+      val scalaLogging        = "2.1.2"
+      val scalaTestV          = "2.2.6"
+      val scalaMockV          = "3.2.2"
 
       Seq(
-        "io.dropwizard.metrics" % "metrics-core" % dropwizardMetricsV,
-        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging,
-        "org.scalatest" %% "scalatest" % scalaTestV % "test"
+        "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
+        "com.typesafe.scala-logging"  %% "scala-logging-slf4j"          % scalaLogging,
+        "org.scalatest"               %% "scalatest"                    % scalaTestV            % "test",
+        "org.scalamock"               %% "scalamock-scalatest-support"  % scalaMockV            % "test"
       )
     })
 
@@ -45,12 +47,12 @@ lazy val httpClient = project.in(file("http-client"))
   .settings(
     name := "influxdb-reporter-http-client",
     libraryDependencies ++= {
-      val typesafeConfigV = "1.3.0"
-      val dispatchV = "0.11.2"
+      val typesafeConfigV     = "1.3.0"
+      val dispatchV           = "0.11.2"
 
       Seq(
-        "com.typesafe" % "config" % typesafeConfigV,
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV
+        "com.typesafe"                 % "config"               % typesafeConfigV,
+        "net.databinder.dispatch"     %% "dispatch-core"        % dispatchV
       )
     }
   )
@@ -60,7 +62,14 @@ lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
   .settings(commonSettings)
   .settings(
     name := "influxdb-reporter-http-client-java-wrapper",
-    javacOptions in doc := Seq("-source", "1.7")
+    javacOptions in doc := Seq("-source", "1.7"),
+    libraryDependencies ++= {
+      val findbugsV = "3.0.1"
+
+      Seq(
+        "com.google.code.findbugs"      % "jsr305"              % findbugsV
+      )
+    }
   )
   .dependsOn(httpClient)
 

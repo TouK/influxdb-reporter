@@ -21,30 +21,30 @@ import Metric._
 import influxdbreporter.core.metrics.Metric
 
 
-trait CollectorOps[T <: CodehaleMetric] {
+trait CollectorOps[T <: CodahaleMetric] {
   def collector: MetricCollector[T]
 }
 
 object CollectorOps {
 
-  implicit object CollectorForCounter extends CollectorOps[CodehaleCounter] {
-    override def collector: MetricCollector[CodehaleCounter] = CounterCollector
+  implicit object CollectorForCounter extends CollectorOps[CodahaleCounter] {
+    override def collector: MetricCollector[CodahaleCounter] = CounterCollector()
   }
 
   implicit def CollectorForGauge[T] = new CollectorOps[Gauge[T]] {
-    override def collector: MetricCollector[Gauge[T]] = new GaugeCollector[T]
+    override def collector: MetricCollector[Gauge[T]] = GaugeCollector[T]()
   }
 
-  implicit object CollectorForHistogram extends CollectorOps[CodehaleHistogram] {
-    override def collector: MetricCollector[CodehaleHistogram] = HistogramCollector
+  implicit object CollectorForHistogram extends CollectorOps[CodahaleHistogram] {
+    override def collector: MetricCollector[CodahaleHistogram] = HistogramCollector()
   }
 
-  implicit object CollectorForMeter extends CollectorOps[CodehaleMeter] {
-    override def collector: MetricCollector[CodehaleMeter] = MeterCollector
+  implicit object CollectorForMeter extends CollectorOps[CodahaleMeter] {
+    override def collector: MetricCollector[CodahaleMeter] = MeterCollector()
   }
 
-  implicit object CollectorForTimer extends CollectorOps[CodehaleTimer] {
-    override def collector: MetricCollector[CodehaleTimer] = SecondTimerCollector
+  implicit object CollectorForTimer extends CollectorOps[CodahaleTimer] {
+    override def collector: MetricCollector[CodahaleTimer] = SecondTimerCollector
   }
 
 }

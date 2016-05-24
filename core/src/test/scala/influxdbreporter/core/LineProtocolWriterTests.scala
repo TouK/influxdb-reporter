@@ -66,5 +66,11 @@ class LineProtocolWriterTests extends WordSpec {
         LineProtocolWriter.write("measurement\"1", Field("f\"1", "fv\"1"), Tag("t\"2", "tv\"2"), 1000000L)
       }
     }
+
+    "generate data with sorted tags" in {
+      assertResult(WriterData[String]("measurement,a=2,b=2,c=2,d=2 f=1i 1000000\n")) {
+        LineProtocolWriter.write("measurement", Field("f", 1), Tag("b", 2) :: Tag("d", 2) :: Tag("a", 2) :: Tag("c", 2) :: Nil , 1000000L)
+      }
+    }
   }
 }

@@ -28,19 +28,19 @@ import influxdbreporter.core.utils.UtcClock
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
-class DiscreteGauge[T](clock: Clock = UtcClock) extends Metric[CodehaleGauge[T]] with UniquenessTagAppender {
+class DiscreteGauge[T](clock: Clock = UtcClock) extends Metric[CodahaleGauge[T]] with UniquenessTagAppender {
 
-  private val metricByTags = new AtomicReference(new ConcurrentLinkedQueue[MetricByTag[CodehaleGauge[T]]]())
+  private val metricByTags = new AtomicReference(new ConcurrentLinkedQueue[MetricByTag[CodahaleGauge[T]]]())
 
   def addValue(value: T, tags: Tag*): Unit = {
-    val newMetric = new CodehaleGauge[T] {
+    val newMetric = new CodahaleGauge[T] {
       override def getValue: T = value
     }
     metricByTags.get().add(MetricByTag(tags.toList, newMetric, Some(clock.getTick)))
   }
 
-  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodehaleGauge[T]]] = {
-    val snapshot = metricByTags.getAndSet(new ConcurrentLinkedQueue[MetricByTag[CodehaleGauge[T]]]())
+  override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodahaleGauge[T]]] = {
+    val snapshot = metricByTags.getAndSet(new ConcurrentLinkedQueue[MetricByTag[CodahaleGauge[T]]]())
     Future.successful(mapListByAddingUniqueTagToEachMetric(snapshot.asScala.toList))
   }
 

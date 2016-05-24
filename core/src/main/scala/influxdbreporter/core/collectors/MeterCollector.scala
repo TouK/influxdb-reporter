@@ -15,28 +15,38 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.metrics.Metric.CodehaleMeter
-import influxdbreporter.core.{Field, Tag, Writer, WriterData}
+import influxdbreporter.core.Field
+import influxdbreporter.core.metrics.Metric.CodahaleMeter
+import MeterCollector._
 
-object MeterCollector extends MetricCollector[CodehaleMeter] {
+sealed class MeterCollector(fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleMeter, MeterCollector](fieldFM) {
 
-  override def collect[U](writer: Writer[U],
-                          name: String,
-                          metric: CodehaleMeter,
-                          timestamp: Long,
-                          tags: Tag*): WriterData[U] =
-    writer.write(s"$name.meter", fields(metric), tags.toList, timestamp)
+  override protected def measurementName: String = "meter"
 
-  private def fields(meter: CodehaleMeter): List[Field] = {
+  override protected def fields(meter: CodahaleMeter): List[Field] = {
     Map(
-      "count" -> meter.getCount,
-      "one-minute" -> meter.getOneMinuteRate,
-      "five-minute" -> meter.getFiveMinuteRate,
-      "fifteen-minute" -> meter.getFifteenMinuteRate,
-      "mean-rate" -> meter.getMeanRate
+      CountField -> meter.getCount,
+      OneMinuteField -> meter.getOneMinuteRate,
+      FiveMinuteField -> meter.getFiveMinuteRate,
+      FifteenMinuteField -> meter.getFifteenMinuteRate,
+      MeanRateField -> meter.getMeanRate
     ).map {
       case (key, value) => Field(key, value)
     }.toList
   }
 
+  override def withFieldMapper(mapper: (Field) => Option[Field]): MeterCollector = {
+    new MeterCollector(mapper)
+  }
+}
+
+object MeterCollector {
+  val CountField = "count"
+  val OneMinuteField = "one-minute"
+  val FiveMinuteField = "five-minute"
+  val FifteenMinuteField = "fifteen-minute"
+  val MeanRateField = "mean-rate"
+
+  def apply(): MeterCollector = new MeterCollector()
 }

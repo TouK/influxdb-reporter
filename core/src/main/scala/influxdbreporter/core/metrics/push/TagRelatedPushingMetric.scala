@@ -26,9 +26,9 @@ import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 // T must be thread safe
-private[metrics] abstract class TagRelatedPushingMetric[T <: CodehaleMetric] extends Metric[T] {
+private[metrics] abstract class TagRelatedPushingMetric[T <: CodahaleMetric] extends Metric[T] {
 
-  type MetricAction[M <: CodehaleMetric] = M => Unit
+  type MetricAction[M <: CodahaleMetric] = M => Unit
 
   private val metricByTags = new AtomicReference(new ConcurrentHashMap[OrderIndependentList, T])
 
