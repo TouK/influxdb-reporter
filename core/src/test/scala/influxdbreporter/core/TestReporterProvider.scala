@@ -24,14 +24,14 @@ trait TestReporterProvider {
 
   protected def createReporter(metricsClient: MetricClient[String],
                                metricsRegistry: MetricRegistry = MetricRegistry("simple"),
-                               cache: Option[WriterDataCache[String]] = None)
+                               buffer: Option[WriterDataBuffer[String]] = None)
                               (implicit executionContext: ExecutionContext) = {
     new InfluxdbReporter(metricsRegistry,
       LineProtocolWriter,
       metricsClient,
       FiniteDuration(500, TimeUnit.MILLISECONDS),
       new SimpleBatcher(5),
-      cache
+      buffer
     )
   }
 }

@@ -17,36 +17,36 @@ package influxdbreporter.core
 
 import org.scalatest.WordSpec
 
-class FixedSizeWriterDataCacheTests extends WordSpec {
+class FixedSizeWriterDataBufferTests extends WordSpec {
 
-  "A FixedSizeWriterDataCache" should {
+  "A FixedSizeWriterDataBuffer" should {
 
     "have max defined values of elements and remove old elements when is full and someone wants to add new ones" in {
-      val cache = new FixedSizeWriterDataCache[String](4)
+      val buffer = new FixedSizeWriterDataBuffer[String](4)
 
       assertResult(wd(1) :: wd(2) :: wd(3) :: Nil) {
-        cache.update(add = wd(1) :: wd(2) :: wd(3) :: Nil)
-        cache.get()
+        buffer.update(add = wd(1) :: wd(2) :: wd(3) :: Nil)
+        buffer.get()
       }
 
       assertResult(wd(4) :: wd(5) :: wd(1) :: wd(2) :: Nil) {
-        cache.update(add = wd(4) :: wd(5) :: Nil)
-        cache.get()
+        buffer.update(add = wd(4) :: wd(5) :: Nil)
+        buffer.get()
       }
 
       assertResult(wd(4) :: wd(5) :: wd(2) :: Nil) {
-        cache.update(remove = wd(1) :: Nil)
-        cache.get()
+        buffer.update(remove = wd(1) :: Nil)
+        buffer.get()
       }
 
       assertResult(wd(6) :: wd(7) :: wd(4) :: wd(2) :: Nil) {
-        cache.update(add = wd(6) :: wd(7) :: Nil, remove = wd(5) :: Nil)
-        cache.get()
+        buffer.update(add = wd(6) :: wd(7) :: Nil, remove = wd(5) :: Nil)
+        buffer.get()
       }
 
       assertResult(wd(7) :: wd(4) :: Nil)  {
-        cache.update(add = wd(7) :: Nil, remove = wd(6) :: wd(2) :: Nil)
-        cache.get()
+        buffer.update(add = wd(7) :: Nil, remove = wd(6) :: wd(2) :: Nil)
+        buffer.get()
       }
     }
   }

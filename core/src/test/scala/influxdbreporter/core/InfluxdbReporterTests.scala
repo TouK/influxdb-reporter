@@ -91,7 +91,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
     reporter.start()
   }
 
-  "Not sent metrics measurements should be cached when cache is configured" in {
+  "Not sent metrics measurements should be buffered when buffer is configured" in {
     val metricsRegistry = MetricRegistry("simple")
     val waiter = new Waiter
     val metricsClient = new SendInvocationCountingMetricsClientDecorator(new SkipSendingClient) {
@@ -107,7 +107,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
             if (data.length != 1) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
             Future.successful(true)
           case _ =>
-            waiter(fail("Should not happend"))
+            waiter(fail("Should not happened"))
             Future.failed(new Exception())
         }
         super.sendData(data)
@@ -119,7 +119,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
     val counter2 = metricsRegistry.register("c2", new Counter)
     val counter3 = metricsRegistry.register("c3", new Counter)
 
-    val reporter = createReporter(metricsClient, metricsRegistry, Some(new FixedSizeWriterDataCache(2)))
+    val reporter = createReporter(metricsClient, metricsRegistry, Some(new FixedSizeWriterDataBuffer(2)))
     reporter.start()
 
     Future {

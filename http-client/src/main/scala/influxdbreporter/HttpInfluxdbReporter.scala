@@ -48,7 +48,7 @@ object HttpInfluxdbReporter {
       )),
       interval,
       new InfluxBatcher,
-      Try(config.getInt("unsent-cache-size")).toOption.map(new FixedSizeWriterDataCache(_))
+      Try(config.getInt("unsent-buffer-size")).toOption.map(new FixedSizeWriterDataBuffer(_))
     )
   }
 }

@@ -27,15 +27,15 @@ public class InfluxdbReporter {
 
     private final influxdbreporter.core.InfluxdbReporter<String> reporter;
 
-    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit, int cacheSize) {
-        WriterDataCache<String> dataCache = new FixedSizeWriterDataCache<>(cacheSize);
+    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit, int bufferSize) {
+        WriterDataBuffer<String> dataBuffer = new FixedSizeWriterDataBuffer<>(bufferSize);
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
                 LineProtocolWriter$.MODULE$,
                 client,
                 FiniteDuration.apply(interval, unit),
                 new InfluxBatcher<String>(),
-                new Some<>(dataCache),
+                new Some<>(dataBuffer),
                 UtcClock$.MODULE$,
                 ExecutionContext.Implicits$.MODULE$.global()
         );

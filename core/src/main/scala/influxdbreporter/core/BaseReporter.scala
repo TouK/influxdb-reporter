@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 abstract class BaseReporter[S](metricRegistry: MetricRegistry,
                                writer: Writer[S],
                                batcher: Batcher[S],
-                               cache: Option[WriterDataCache[S]],
+                               buffer: Option[WriterDataBuffer[S]],
                                clock: Clock)
                               (implicit ec: ExecutionContext)
   extends Reporter with Reportable[S] with LazyLogging {
@@ -37,24 +37,24 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
     }
     for {
       collectedMetrics <- collectedMetricsFuture
-      notYetSendMetrics = collectedMetrics ::: notYetSentMetricsFromCache
+      notYetSendMetrics = collectedMetrics ::: notYetSentMetricsFromBuffer
       batches = batcher.partition(notYetSendMetrics)
       reported <- reportMetricBatchesSequentially(batches) {
         reportMetrics
       }
-      _ = updateNotSentMetricsCache(reported)
+      _ = updateNotSentMetricsBuffer(reported)
     } yield reported
   }
 
-  private def notYetSentMetricsFromCache: List[WriterData[S]] = {
-    cache map (_.get()) getOrElse Nil
+  private def notYetSentMetricsFromBuffer: List[WriterData[S]] = {
+    buffer map (_.get()) getOrElse Nil
   }
 
-  private def updateNotSentMetricsCache(reportResult: List[BatchReportingResult[S]]): Unit = {
+  private def updateNotSentMetricsBuffer(reportResult: List[BatchReportingResult[S]]): Unit = {
     val (sent, notSent) = reportResult partition (_.reported)
     val notSentMetrics = notSent flatMap (_.batch)
     val sentMetrics = sent flatMap (_.batch)
-    cache.map(_.update(notSentMetrics, sentMetrics))
+    buffer.map(_.update(notSentMetrics, sentMetrics))
   }
 
   private def reportMetricBatchesSequentially[T](batches: TraversableOnce[List[WriterData[T]]])

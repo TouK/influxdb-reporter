@@ -18,6 +18,7 @@ package influxdbreporter.core
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import com.codahale.metrics.Clock
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,10 +38,10 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
                                     interval: FiniteDuration,
                                     writer: Writer[S],
                                     batcher: Batcher[S],
-                                    cache: Option[WriterDataCache[S]],
+                                    buffer: Option[WriterDataBuffer[S]],
                                     clock: Clock)
                                    (implicit executionContext: ExecutionContext)
-  extends BaseReporter[S](metricRegistry, writer, batcher, cache, clock) {
+  extends BaseReporter[S](metricRegistry, writer, batcher, buffer, clock) {
 
   private val scheduler = Executors.newScheduledThreadPool(1)
   private var currentStoppableReportingTask: Option[StoppableReportingTaskWithRescheduling] = None
@@ -49,6 +50,7 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
     if (currentStoppableReportingTask.forall(_.isStopped)) {
       val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
       currentStoppableReportingTask = Some(stoppableTask)
+      logger.info(s"Influxdb scheduled reporter was started with ${interval.toSeconds}s report interval")
       stoppableTask
     } else {
       throw new ReporterAlreadyStartedException()
@@ -90,7 +92,7 @@ trait Reschedulable {
 private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecutorService,
                                                      createTask: Reschedulable => Runnable,
                                                      delay: FiniteDuration)
-  extends StoppableReportingTask with Reschedulable {
+  extends StoppableReportingTask with Reschedulable with LazyLogging {
 
   private val task = createTask(this)
   private var stopped = false
@@ -99,6 +101,7 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
   override def stop(): Unit = synchronized {
     stopped = true
     if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
+    logger.info(s"Influxdb scheduled reporter was stopped!")
   }
 
   override def isStopped: Boolean = synchronized(stopped)

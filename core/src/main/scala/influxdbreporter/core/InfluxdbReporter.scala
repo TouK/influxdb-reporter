@@ -26,13 +26,13 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           client: MetricClient[S],
                           interval: FiniteDuration,
                           batcher: Batcher[S] = new InfluxBatcher[S],
-                          cache: Option[WriterDataCache[S]] = None,
+                          buffer: Option[WriterDataBuffer[S]] = None,
                           clock: Clock = UtcClock)
                          (implicit executionContext: ExecutionContext)
-  extends ScheduledReporter[S](registry, interval, writer, batcher, cache, clock) {
+  extends ScheduledReporter[S](registry, interval, writer, batcher, buffer, clock) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
-    new InfluxdbReporter[S](registry, writer, client, newInterval, batcher, cache, clock)
+    new InfluxdbReporter[S](registry, writer, client, newInterval, batcher, buffer, clock)
 
   override protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean] = {
     client.sendData(collectedMetricsData)
