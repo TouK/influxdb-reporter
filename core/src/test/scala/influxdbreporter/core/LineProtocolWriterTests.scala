@@ -75,5 +75,12 @@ class LineProtocolWriterTests extends WordSpec {
         lineProtocolWriter.write("measurement", Field("f", 1), Tag("b", 2) :: Tag("d", 2) :: Tag("a", 2) :: Tag("c", 2) :: Nil , 1000000L)
       }
     }
+
+    "add static tags to returned result" in {
+      assertResult(WriterData[String]("measurement,a=a1,b=b1,t=2 f=1i 1000000\n")) {
+        new LineProtocolWriter(Tag("a", "a1") :: Tag("b", "b1") :: Nil)
+          .write("measurement", Field("f", 1), Tag("t", 2), 1000000L)
+      }
+    }
   }
 }

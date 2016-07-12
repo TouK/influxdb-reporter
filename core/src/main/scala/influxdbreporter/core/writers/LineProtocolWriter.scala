@@ -28,7 +28,7 @@ class LineProtocolWriter(staticTags: List[Tag] = Nil) extends BaseWriterWithStat
                      tags: List[Tag],
                      timestamp: Long): WriterData[String] =
     WriterData {
-      s"${formatLinePart(measurement)}${tagsToString(tags)}${fieldsToString(fields)} $timestamp\n"
+      s"${formatLinePart(measurement)}${tagsToString(tags ::: staticTags)}${fieldsToString(fields)} $timestamp\n"
     }
 
   private def tagsToString(tags: List[Tag]): String =
