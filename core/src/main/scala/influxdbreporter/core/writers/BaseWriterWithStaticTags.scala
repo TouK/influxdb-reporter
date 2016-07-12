@@ -13,17 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core
+package influxdbreporter.core.writers
 
-import influxdbreporter.core.writers.WriterData
+import influxdbreporter.core.Tag
 
-import scala.concurrent.Future
-
-trait MetricClient[T] {
-
-  def sendData(data: List[WriterData[T]]): Future[Boolean]
-}
-
-class SkipSendingClient extends MetricClient[String] {
-  override def sendData(data: List[WriterData[String]]): Future[Boolean] = Future.successful(true)
-}
+abstract class BaseWriterWithStaticTags[T](staticTags: List[Tag]) extends Writer[T]

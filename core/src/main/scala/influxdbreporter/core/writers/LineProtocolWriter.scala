@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core
+package influxdbreporter.core.writers
 
-import java.text.{DecimalFormatSymbols, DecimalFormat}
+import java.text.{DecimalFormat, DecimalFormatSymbols}
 
-object LineProtocolWriter extends Writer[String] {
+import influxdbreporter.core.{Field, Tag}
+
+class LineProtocolWriter(staticTags: List[Tag] = Nil) extends BaseWriterWithStaticTags[String](staticTags) {
 
   import LineProtocolPartsFormatter._
 
@@ -87,6 +89,7 @@ private object LineProtocolPartsFormatter {
     case v: Float => customDecimalFormat.format(value)
     case v: Int => s"${v}i"
     case v: Long => customDecimalFormat.format(value)
+    case v: BigDecimal => customDecimalFormat.format(v.doubleValue())
     case true => TrueString
     case false => FalseString
     case v => s"""\"${escape(v.toString, FieldValueEscapedCharacters)}\""""

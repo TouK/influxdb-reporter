@@ -19,10 +19,12 @@ import java.util.concurrent.TimeUnit
 
 import com.typesafe.config.{Config, ConfigFactory}
 import influxdbreporter.core._
+import influxdbreporter.core.writers.LineProtocolWriter
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
+import scala.collection.JavaConversions._
 
 object HttpInfluxdbReporter {
 
@@ -38,7 +40,7 @@ object HttpInfluxdbReporter {
     implicit val timeout = interval - FiniteDuration(1, TimeUnit.SECONDS)
     new InfluxdbReporter[String](
       registry,
-      LineProtocolWriter,
+      new LineProtocolWriter(getStaticTags(config)),
       new HttpInfluxdbClient(ConnectionData(
         config.getString("address"),
         config.getInt("port"),
@@ -51,4 +53,11 @@ object HttpInfluxdbReporter {
       Try(config.getInt("unsent-buffer-size")).toOption.map(new FixedSizeWriterDataBuffer(_))
     )
   }
+
+  private def getStaticTags(config: Config): List[Tag] =
+    Try {
+      config.getConfigList("static-tags")
+        .map(c => Tag(c.getString("name"), c.getString("value")))
+        .toList
+    }.getOrElse(Nil)
 }

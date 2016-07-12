@@ -17,6 +17,7 @@ package influxdbreporter.core
 
 import com.codahale.metrics.Clock
 import influxdbreporter.core.utils.UtcClock
+import influxdbreporter.core.writers.{Writer, WriterData}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}

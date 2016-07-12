@@ -15,61 +15,64 @@
  */
 package influxdbreporter.core
 
+import influxdbreporter.core.writers.{LineProtocolWriter, WriterData}
 import org.scalatest.WordSpec
 
 class LineProtocolWriterTests extends WordSpec {
+
+  private val lineProtocolWriter = new LineProtocolWriter()
 
   "A LineProtocolWriter" should {
 
     "generate proper Writer Data values" in {
       assertResult(WriterData[String]("measurement,t=2 f=1i 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", 1), Tag("t", 2), 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", 1), Tag("t", 2), 1000000L)
       }
 
       assertResult(WriterData[String]("measurement,t=value2 f=\"value1\" 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", "value1"), Tag("t", "value2"), 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", "value1"), Tag("t", "value2"), 1000000L)
       }
 
       assertResult(WriterData[String]("measurement,t=2 f=1.0 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", 1L), Tag("t", 2L), 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", 1L), Tag("t", 2L), 1000000L)
       }
 
       assertResult(WriterData[String]("measurement,t=20.2 f=10.1 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", 10.10), Tag("t", 20.20), 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", 10.10), Tag("t", 20.20), 1000000L)
       }
 
       assertResult(WriterData[String]("measurement,t=false f=true 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", true), Tag("t", false), 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", true), Tag("t", false), 1000000L)
       }
     }
 
     "skip tag when value is empty" in {
       assertResult(WriterData[String]("measurement f=\"\" 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", ""), Tag("t", ""), 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", ""), Tag("t", ""), 1000000L)
       }
     }
 
     "properly escape space character" in {
       assertResult(WriterData[String]("measurement\\ 1,t\\ 2=tv\\ 2 f\\ 1=\"fv\\ 1\" 1000000\n")) {
-        LineProtocolWriter.write("measurement 1", Field("f 1", "fv 1"), Tag("t 2", "tv 2"), 1000000L)
+        lineProtocolWriter.write("measurement 1", Field("f 1", "fv 1"), Tag("t 2", "tv 2"), 1000000L)
       }
     }
 
     "properly escape comma character" in {
       assertResult(WriterData[String]("measurement\\,1,t\\,2=tv\\,2 f\\,1=\"fv\\,1\" 1000000\n")) {
-        LineProtocolWriter.write("measurement,1", Field("f,1", "fv,1"), Tag("t,2", "tv,2"), 1000000L)
+        lineProtocolWriter.write("measurement,1", Field("f,1", "fv,1"), Tag("t,2", "tv,2"), 1000000L)
       }
     }
 
     "properly escape quotation mark character in field string" in {
       assertResult(WriterData[String]("measurement\"1,t\"2=tv\"2 f\"1=\"fv\\\"1\" 1000000\n")) {
-        LineProtocolWriter.write("measurement\"1", Field("f\"1", "fv\"1"), Tag("t\"2", "tv\"2"), 1000000L)
+        lineProtocolWriter.write("measurement\"1", Field("f\"1", "fv\"1"), Tag("t\"2", "tv\"2"), 1000000L)
       }
     }
 
     "generate data with sorted tags" in {
       assertResult(WriterData[String]("measurement,a=2,b=2,c=2,d=2 f=1i 1000000\n")) {
-        LineProtocolWriter.write("measurement", Field("f", 1), Tag("b", 2) :: Tag("d", 2) :: Tag("a", 2) :: Tag("c", 2) :: Nil , 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", 1), Tag("b", 2) :: Tag("d", 2) :: Tag("a", 2) :: Tag("c", 2) :: Nil , 1000000L)
       }
     }
   }

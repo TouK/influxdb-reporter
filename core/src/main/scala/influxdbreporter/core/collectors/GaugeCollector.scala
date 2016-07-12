@@ -16,17 +16,21 @@
 package influxdbreporter.core.collectors
 
 import com.codahale.metrics.Gauge
-import influxdbreporter.core.Field
+import influxdbreporter.core.{Field, Tag}
 import GaugeCollector.ValueField
 
-sealed class GaugeCollector[T](fieldFM: Field => Option[Field] = t => Some(t))
-  extends BaseMetricCollector[Gauge[T], GaugeCollector[T]](fieldFM) {
+sealed class GaugeCollector[T](staticTags: List[Tag] = Nil, fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[Gauge[T], GaugeCollector[T]](staticTags, fieldFM) {
 
   override protected def measurementName: String = "gauge"
 
   override protected def fields(gauge: Gauge[T]): List[Field] = List(Field(ValueField, gauge.getValue))
 
-  override def withFieldMapper(mapper: (Field) => Option[Field]): GaugeCollector[T] = new GaugeCollector[T](mapper)
+  override def withFieldMapper(mapper: (Field) => Option[Field]): GaugeCollector[T] =
+    new GaugeCollector[T](staticTags, mapper)
+
+  override def withStaticTags(tags: List[Tag]): GaugeCollector[T] =
+    new GaugeCollector[T](tags, fieldFM)
 }
 
 object GaugeCollector {

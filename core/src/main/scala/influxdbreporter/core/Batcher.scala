@@ -15,6 +15,8 @@
  */
 package influxdbreporter.core
 
+import influxdbreporter.core.writers.WriterData
+
 trait Batcher[T] {
 
   def partition(data: List[WriterData[T]]): List[List[WriterData[T]]]

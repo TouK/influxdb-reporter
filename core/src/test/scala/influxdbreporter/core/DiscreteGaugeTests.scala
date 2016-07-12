@@ -18,6 +18,7 @@ package influxdbreporter.core
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import influxdbreporter.core.metrics.push.DiscreteGauge
+import influxdbreporter.core.writers.WriterData
 import org.scalatest.time.SpanSugar._
 
 import scala.concurrent.Future

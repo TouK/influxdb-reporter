@@ -17,6 +17,8 @@ package influxdbreporter.core
 
 import java.util.concurrent.TimeUnit
 
+import influxdbreporter.core.writers.LineProtocolWriter
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -27,7 +29,7 @@ trait TestReporterProvider {
                                buffer: Option[WriterDataBuffer[String]] = None)
                               (implicit executionContext: ExecutionContext) = {
     new InfluxdbReporter(metricsRegistry,
-      LineProtocolWriter,
+      new LineProtocolWriter,
       metricsClient,
       FiniteDuration(500, TimeUnit.MILLISECONDS),
       new SimpleBatcher(5),

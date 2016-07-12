@@ -19,6 +19,7 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import com.codahale.metrics.Clock
 import com.typesafe.scalalogging.slf4j.LazyLogging
+import influxdbreporter.core.writers.{Writer, WriterData}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}

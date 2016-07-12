@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package influxdbreporter.core
+package influxdbreporter.core.writers
+
+import influxdbreporter.core.{Field, Tag}
 
 trait Writer[T] {
 

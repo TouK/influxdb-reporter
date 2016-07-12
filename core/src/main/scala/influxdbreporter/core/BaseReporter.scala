@@ -20,6 +20,7 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 import influxdbreporter.core.metrics.Metric._
+import influxdbreporter.core.writers.{Writer, WriterData}
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -15,15 +15,16 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.Field
+import influxdbreporter.core.{Field, Tag}
 import influxdbreporter.core.collectors.TimerCollector._
 import influxdbreporter.core.metrics.Metric.CodahaleTimer
 
 import scala.concurrent.duration.{TimeUnit, _}
 
 sealed class TimerCollector(timeUnit: TimeUnit,
+                            staticTags: List[Tag] = Nil,
                             fieldFM: Field => Option[Field] = t => Some(t))
-  extends BaseMetricCollector[CodahaleTimer, TimerCollector](fieldFM) {
+  extends BaseMetricCollector[CodahaleTimer, TimerCollector](staticTags, fieldFM) {
 
   override protected def measurementName: String = "timer"
 
@@ -50,14 +51,17 @@ sealed class TimerCollector(timeUnit: TimeUnit,
     }.toList
   }
 
-  def withFieldMapper(mapper: Field => Option[Field]): TimerCollector = {
-    new TimerCollector(timeUnit, mapper)
-  }
+  override def withFieldMapper(mapper: Field => Option[Field]): TimerCollector =
+    new TimerCollector(timeUnit, staticTags, mapper)
+
+  override def withStaticTags(tags: List[Tag]): TimerCollector =
+    new TimerCollector(timeUnit, tags, fieldFM)
 
   private def convertToOtherTimeUnit(value: Double, oldTimeUnit: TimeUnit, newTimeUnit: TimeUnit): Double = {
     if (oldTimeUnit != newTimeUnit) Duration(value, oldTimeUnit).toUnit(newTimeUnit)
     else value
   }
+
 }
 
 object TimerCollector {

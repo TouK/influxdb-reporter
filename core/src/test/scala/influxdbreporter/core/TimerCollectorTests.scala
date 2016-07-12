@@ -18,6 +18,7 @@ package influxdbreporter.core
 import com.codahale.metrics.Timer
 import influxdbreporter.core.collectors.TimerCollector._
 import influxdbreporter.core.collectors.{SecondTimerCollector, TimerCollector}
+import influxdbreporter.core.writers.Writer
 import org.scalatest.WordSpec
 import org.scalamock.scalatest.MockFactory
 
