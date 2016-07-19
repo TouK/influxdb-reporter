@@ -17,7 +17,9 @@ package influxdbreporter.javawrapper;
 
 import influxdbreporter.core.*;
 import influxdbreporter.core.utils.UtcClock$;
+import influxdbreporter.core.writers.LineProtocolWriter;
 import scala.Some;
+import scala.collection.immutable.List$;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -31,7 +33,7 @@ public class InfluxdbReporter {
         WriterDataBuffer<String> dataBuffer = new FixedSizeWriterDataBuffer<>(bufferSize);
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
-                LineProtocolWriter$.MODULE$,
+                new LineProtocolWriter(List$.MODULE$.<Tag>empty()),
                 client,
                 FiniteDuration.apply(interval, unit),
                 new InfluxBatcher<String>(),

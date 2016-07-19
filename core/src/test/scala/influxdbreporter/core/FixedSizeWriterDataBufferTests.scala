@@ -15,6 +15,7 @@
  */
 package influxdbreporter.core
 
+import influxdbreporter.core.writers.WriterData
 import org.scalatest.WordSpec
 
 class FixedSizeWriterDataBufferTests extends WordSpec {

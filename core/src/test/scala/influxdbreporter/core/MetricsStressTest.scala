@@ -20,8 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import influxdbreporter.core.collectors.{CounterCollector, MeterCollector, MetricCollector, SecondTimerCollector}
 import influxdbreporter.core.metrics.Metric.{CodahaleCounter, CodahaleMeter, CodahaleMetric, CodahaleTimer}
-import influxdbreporter.core.metrics.push.{Counter, Timer, Meter}
+import influxdbreporter.core.metrics.push.{Counter, Meter, Timer}
 import influxdbreporter.core.metrics.Metric
+import influxdbreporter.core.writers.{LineProtocolWriter, Writer, WriterData}
 import org.scalatest.WordSpec
 import org.scalatest.concurrent.AsyncAssertions.Waiter
 import org.scalatest.concurrent.ScalaFutures
@@ -63,7 +64,8 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
           metric.inc(tags: _*)
         }
 
-        override protected def usageCount(metric: CodahaleCounter, lastCount: Int): Int = lastCount + metric.getCount.asInstanceOf[Int]
+        override protected def usageCount(metric: CodahaleCounter, lastCount: Int): Int =
+          lastCount + metric.getCount.asInstanceOf[Int]
       },
       new MetricTestContext[CodahaleTimer, Timer](timer, timerCollector) {
         override protected def updateMetric(metric: Timer, tags: List[Tag]): Unit = {
@@ -72,12 +74,14 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
           context.stop()
         }
 
-        override protected def usageCount(metric: CodahaleTimer, lastCount: Int): Int = lastCount + metric.getCount.asInstanceOf[Int]
+        override protected def usageCount(metric: CodahaleTimer, lastCount: Int): Int =
+          lastCount + metric.getCount.asInstanceOf[Int]
       },
       new MetricTestContext[CodahaleMeter, Meter](meter, meterCollector) {
         override protected def updateMetric(metric: Meter, tags: List[Tag]): Unit = metric.mark(tags: _*)
 
-        override protected def usageCount(metric: CodahaleMeter, lastCount: Int): Int = lastCount + metric.getCount.asInstanceOf[Int]
+        override protected def usageCount(metric: CodahaleMeter, lastCount: Int): Int =
+          lastCount + metric.getCount.asInstanceOf[Int]
       }
     )
 
@@ -92,7 +96,12 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
       }
     }
 
-    val reporter = new InfluxdbReporter(metricsRegistry, LineProtocolWriter, metricsClient, FiniteDuration(500, TimeUnit.MILLISECONDS))
+    val reporter = new InfluxdbReporter(
+      metricsRegistry,
+      new LineProtocolWriter(),
+      metricsClient,
+      FiniteDuration(500, TimeUnit.MILLISECONDS)
+    )
     reporter.start()
 
     val simulations = (0 until CONCURRENT_REPORTS_COUNT).map { _ =>

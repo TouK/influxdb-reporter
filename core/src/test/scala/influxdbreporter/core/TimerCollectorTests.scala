@@ -15,9 +15,12 @@
  */
 package influxdbreporter.core
 
+import java.util.concurrent.TimeUnit
+
 import com.codahale.metrics.Timer
 import influxdbreporter.core.collectors.TimerCollector._
 import influxdbreporter.core.collectors.{SecondTimerCollector, TimerCollector}
+import influxdbreporter.core.writers.Writer
 import org.scalatest.WordSpec
 import org.scalamock.scalatest.MockFactory
 
@@ -39,6 +42,14 @@ class TimerCollectorTests extends WordSpec with MockFactory {
       (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
         .expects(measurementName, timerFields, tagList, timestamp)
       SecondTimerCollector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
+    }
+
+    "write collector specific fields and static tags" in {
+      val staticTags = Tag("st1", "static tag") :: Nil
+      val timerCollector = new TimerCollector(TimeUnit.SECONDS, staticTags)
+      (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
+        .expects(measurementName, timerFields, tagList ::: staticTags , timestamp)
+      timerCollector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
     }
 
     "write filtered list of fields when collector was properly configured" in {

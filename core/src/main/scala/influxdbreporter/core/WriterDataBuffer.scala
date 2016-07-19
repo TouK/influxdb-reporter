@@ -15,6 +15,8 @@
  */
 package influxdbreporter.core
 
+import influxdbreporter.core.writers.WriterData
+
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
 

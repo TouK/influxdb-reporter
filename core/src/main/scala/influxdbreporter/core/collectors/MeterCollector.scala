@@ -15,12 +15,12 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.Field
+import influxdbreporter.core.{Field, Tag}
 import influxdbreporter.core.metrics.Metric.CodahaleMeter
 import MeterCollector._
 
-sealed class MeterCollector(fieldFM: Field => Option[Field] = t => Some(t))
-  extends BaseMetricCollector[CodahaleMeter, MeterCollector](fieldFM) {
+sealed class MeterCollector(staticTags: List[Tag] = Nil, fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleMeter, MeterCollector](staticTags, fieldFM) {
 
   override protected def measurementName: String = "meter"
 
@@ -36,9 +36,11 @@ sealed class MeterCollector(fieldFM: Field => Option[Field] = t => Some(t))
     }.toList
   }
 
-  override def withFieldMapper(mapper: (Field) => Option[Field]): MeterCollector = {
-    new MeterCollector(mapper)
-  }
+  override def withFieldMapper(mapper: (Field) => Option[Field]): MeterCollector =
+    new MeterCollector(staticTags, mapper)
+
+  override def withStaticTags(tags: List[Tag]): MeterCollector =
+    new MeterCollector(tags, fieldFM)
 }
 
 object MeterCollector {

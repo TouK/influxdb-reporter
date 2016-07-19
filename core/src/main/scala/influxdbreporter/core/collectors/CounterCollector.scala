@@ -15,19 +15,23 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.Field
+import influxdbreporter.core.{Field, Tag}
 import influxdbreporter.core.metrics.Metric.CodahaleCounter
 import CounterCollector.CountField
 
-sealed class CounterCollector(fieldFM: Field => Option[Field] = t => Some(t))
-  extends BaseMetricCollector[CodahaleCounter, CounterCollector](fieldFM) {
+sealed class CounterCollector(staticTags: List[Tag] = Nil, fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleCounter, CounterCollector](staticTags, fieldFM) {
 
   override protected def measurementName: String = "counter"
 
   override protected def fields(metric: CodahaleCounter): List[Field] = List(Field(CountField, metric.getCount))
 
   override def withFieldMapper(mapper: (Field) => Option[Field]): CounterCollector = {
-    new CounterCollector(mapper)
+    new CounterCollector(staticTags, mapper)
+  }
+
+  override def withStaticTags(tags: List[Tag]): CounterCollector = {
+    new CounterCollector(tags, fieldFM)
   }
 }
 

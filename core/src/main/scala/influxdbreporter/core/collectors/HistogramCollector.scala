@@ -15,12 +15,12 @@
  */
 package influxdbreporter.core.collectors
 
-import influxdbreporter.core.Field
+import influxdbreporter.core.{Field, Tag}
 import influxdbreporter.core.metrics.Metric.CodahaleHistogram
 import HistogramCollector._
 
-sealed class HistogramCollector(fieldFM: Field => Option[Field] = t => Some(t))
-  extends BaseMetricCollector[CodahaleHistogram, HistogramCollector](fieldFM) {
+sealed class HistogramCollector(staticTags: List[Tag] = Nil, fieldFM: Field => Option[Field] = t => Some(t))
+  extends BaseMetricCollector[CodahaleHistogram, HistogramCollector](staticTags, fieldFM) {
 
   override protected def measurementName: String = "histogram"
 
@@ -44,9 +44,11 @@ sealed class HistogramCollector(fieldFM: Field => Option[Field] = t => Some(t))
     }.toList
   }
 
-  override def withFieldMapper(mapper: (Field) => Option[Field]): HistogramCollector = {
-    new HistogramCollector(mapper)
-  }
+  override def withFieldMapper(mapper: (Field) => Option[Field]): HistogramCollector =
+    new HistogramCollector(staticTags, mapper)
+  
+  override def withStaticTags(tags: List[Tag]): HistogramCollector =
+    new HistogramCollector(tags, fieldFM)
 }
 
 object HistogramCollector {

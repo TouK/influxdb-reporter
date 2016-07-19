@@ -16,14 +16,16 @@
 package influxdbreporter.core.collectors
 
 import influxdbreporter.core.metrics.Metric._
-import influxdbreporter.core.{Field, Tag, Writer, WriterData}
+import influxdbreporter.core.writers.{Writer, WriterData}
+import influxdbreporter.core.{Field, Tag}
 
 trait MetricCollector[T <: CodahaleMetric] {
 
   def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): Option[WriterData[U]]
 }
 
-abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector[T, V]](mapper: Field => Option[Field])
+abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector[T, V]](staticTags: List[Tag],
+                                                                                        mapper: Field => Option[Field])
   extends MetricCollector[T] {
 
   protected def measurementName: String
@@ -32,10 +34,14 @@ abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector
 
   def withFieldMapper(mapper: Field => Option[Field]): V
 
+  def withStaticTags(tags: List[Tag]): V
+
   def collect[U](writer: Writer[U], name: String, metric: T, timestamp: Long, tags: Tag*): Option[WriterData[U]] = {
     filterFields(metric) match {
-      case Nil => None
-      case fields => Some(writer.write(s"$name.$measurementName", filterFields(metric), tags.toList, timestamp))
+      case Nil =>
+        None
+      case fields =>
+        Some(writer.write(s"$name.$measurementName", filterFields(metric), tags.toList ::: staticTags, timestamp))
     }
   }
 

@@ -18,7 +18,8 @@ package influxdbreporter
 import com.ning.http.client.Response
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import dispatch.{Http, Req, url}
-import influxdbreporter.core.{MetricClient, WriterData}
+import influxdbreporter.core.MetricClient
+import influxdbreporter.core.writers.WriterData
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
