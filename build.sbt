@@ -16,9 +16,9 @@ val commonSettings =
       isSnapshot := true,
       publishTo := {
         if (isSnapshot.value)
-          Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/snapshots")
+          Some("Sonatype Nexus" at "https://nexus.touk.pl/nexus/content/repositories/snapshots")
         else
-          Some("Sonatype Nexus" at "http://nexus.touk.pl/nexus/content/repositories/releases")
+          Some("Sonatype Nexus" at "https://nexus.touk.pl/nexus/content/repositories/releases")
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".nexus_touk_pl_credentials"),
       parallelExecution in Test := false

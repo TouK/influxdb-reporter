@@ -56,9 +56,9 @@ class DiscreteGaugeTests extends BaseMetricTest with TestReporterProvider {
         }
       }
 
-      Thread.sleep(10000)
+      Thread.sleep(6000)
       working.set(false)
-      Thread.sleep(2000)
+      Thread.sleep(6000)
 
       assertResult(reportedValuesCount.get())(addedValuesCount.get())
     }

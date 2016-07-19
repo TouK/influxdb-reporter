@@ -28,21 +28,21 @@ class LineProtocolWriter(staticTags: List[Tag] = Nil) extends BaseWriterWithStat
                      tags: List[Tag],
                      timestamp: Long): WriterData[String] =
     WriterData {
-      s"${formatLinePart(measurement)}${tagsToString(tags ::: staticTags)}${fieldsToString(fields)} $timestamp\n"
+      s"${formatMeasurementName(measurement)}${tagsToString(tags ::: staticTags)}${fieldsToString(fields)} $timestamp\n"
     }
 
   private def tagsToString(tags: List[Tag]): String =
     tags
       .sortBy(_.key)(Ordering[String].reverse)
-      .map(tag => (formatLinePart(tag.key), formatKeyValueIfValueIsCorrect(tag.value)))
+      .map(tag => (formatTagName(tag.key), formatTagValueIfValueIsCorrect(tag.value)))
       .foldLeft(List.empty[String]) {
-        case (acc, (formattedTagKey, Some(formattedTagVaue))) => s""",$formattedTagKey=$formattedTagVaue""" :: acc
+        case (acc, (formattedTagKey, Some(formattedTagValue))) => s""",$formattedTagKey=$formattedTagValue""" :: acc
         case (acc, _) => acc
       }.mkString
 
   private def fieldsToString(fields: List[Field]): String =
     fields.foldLeft(List.empty[String]) {
-      case (acc, tag) => s"""${formatLinePart(tag.key)}=${formatFieldValue(tag.value)}""" :: acc
+      case (acc, field) => s"""${formatFieldName(field.key)}=${formatFieldValue(field.value)}""" :: acc
     }.mkString(",") match {
       case str if str.nonEmpty => s" $str"
       case str => str
@@ -51,8 +51,12 @@ class LineProtocolWriter(staticTags: List[Tag] = Nil) extends BaseWriterWithStat
 
 private object LineProtocolPartsFormatter {
 
-  private val LineEscapedCharacters = List(" ", ",")
-  private val FieldValueEscapedCharacters = "\"" :: LineEscapedCharacters
+  private val MeasurementNameEscapedCharacters = List(" ", ",")
+  private val FieldNameEscapedCharacters = List(" ", ",", "=")
+  private val FieldValueEscapedCharacters = List("\"")
+  private val TagNameEscapedCharacters = List(" ", ",", "=")
+  private val TagValueEscapedCharacters = List(" ", ",", "=")
+
   private val TrueString = "true"
   private val FalseString = "false"
 
@@ -71,17 +75,19 @@ private object LineProtocolPartsFormatter {
     df
   }
 
-  def formatLinePart(key: String): String = {
-    escape(key, LineEscapedCharacters)
-  }
+  def formatMeasurementName(name: String): String = escape(name, MeasurementNameEscapedCharacters)
 
-  def formatKeyValueIfValueIsCorrect(value: Any): Option[String] = value match {
+  def formatFieldName(name: String): String = escape(name, FieldNameEscapedCharacters)
+
+  def formatTagName(name: String): String = escape(name, TagNameEscapedCharacters)
+
+  def formatTagValueIfValueIsCorrect(value: Any): Option[String] = value match {
     case v: Double => Some(customDecimalFormat.format(value))
     case v: Float => Some(customDecimalFormat.format(value))
     case true => Some(TrueString)
     case false => Some(FalseString)
     case "" => None
-    case _ => Some(escape(value.toString, LineEscapedCharacters))
+    case _ => Some(escape(value.toString, TagValueEscapedCharacters))
   }
 
   def formatFieldValue(value: Any): String = value match {
