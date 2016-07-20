@@ -60,10 +60,11 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
       case Success(response) if isResponseSucceed(response) =>
         logger.info(s"Data was sent and successfully written")
       case Success(response) =>
-        logger.warn(s"Request: ${request.toRequest} body:\n${requestBodyToString(request)}\n" +
-          s"Influxdb cannot handle request with metrics: status=[${response.getStatusCode}] msg=[${response.getResponseBody}]")
+        logger.warn(s"Request: ${request.toRequest}\nInfluxdb cannot handle request with metrics: status=[${response.getStatusCode}]")
+        logger.debug(s"Request body:\\n${requestBodyToString(request)}")
       case Failure(ex) =>
-        logger.error(s"Request: ${request.toRequest} body:\n${requestBodyToString(request)}\nInfluxdb cannot handle request with metrics:", ex)
+        logger.error(s"Request: ${request.toRequest}\nInfluxdb cannot handle request with metrics:", ex)
+        logger.debug(s"Request body:\\n${requestBodyToString(request)}")
     }
     result
   }
