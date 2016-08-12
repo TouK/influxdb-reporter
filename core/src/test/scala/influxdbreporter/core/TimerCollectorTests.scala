@@ -30,7 +30,7 @@ class TimerCollectorTests extends WordSpec with MockFactory {
   val name = "test"
   val measurementName = s"$name.timer"
   val timestamp = 10000000L
-  val tagList = new Tag("key1", 1) :: Nil
+  val tagList = Tag("key1", 1) :: Nil
   val timerFields = List(
     fieldD(OneMinuteField), fieldI(CountField), fieldD(Percentile50Field), fieldD(Percentile75Field), fieldD(MeanField),
     fieldD(MinField), fieldI(RunCountField), fieldD(MaxField), fieldD(Percentile99Field), fieldD(Percentile95Field),
@@ -99,7 +99,7 @@ class TimerCollectorTests extends WordSpec with MockFactory {
     }
   }
 
-  private def fieldD(key: String) = new Field(key, 0.0)
+  private def fieldD(key: String) = Field(key, 0.0)
 
-  private def fieldI(key: String) = new Field(key, 0)
+  private def fieldI(key: String) = Field(key, 0)
 }

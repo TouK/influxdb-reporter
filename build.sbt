@@ -9,7 +9,9 @@ val commonSettings =
     Seq(
       organization := "pl.touk.influxdb-reporter",
       javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
-      scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-target:jvm-1.7"),
+      scalacOptions := Seq(
+        "-target:jvm-1.7", "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
+      ),
       removeExistingHeaderBlock := true,
       license := apache2("Copyright 2015"),
       licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),

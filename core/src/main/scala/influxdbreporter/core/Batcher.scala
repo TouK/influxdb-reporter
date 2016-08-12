@@ -16,6 +16,7 @@
 package influxdbreporter.core
 
 import influxdbreporter.core.writers.WriterData
+import scala.language.postfixOps
 
 trait Batcher[T] {
 
