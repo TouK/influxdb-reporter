@@ -9,7 +9,9 @@ val commonSettings =
     Seq(
       organization := "pl.touk.influxdb-reporter",
       javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
-      scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-target:jvm-1.7"),
+      scalacOptions := Seq(
+        "-target:jvm-1.7", "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
+      ),
       removeExistingHeaderBlock := true,
       license := apache2("Copyright 2015"),
       licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
@@ -29,16 +31,16 @@ lazy val core = project.in(file("core"))
   .settings(
     name := "influxdb-reporter-core",
     libraryDependencies ++= {
-      val dropwizardMetricsV  = "3.1.2"
-      val scalaLogging        = "2.1.2"
-      val scalaTestV          = "2.2.6"
-      val scalaMockV          = "3.2.2"
+      val dropwizardMetricsV = "3.1.2"
+      val scalaLogging = "2.1.2"
+      val scalaTestV = "2.2.6"
+      val scalaMockV = "3.2.2"
 
       Seq(
-        "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
-        "com.typesafe.scala-logging"  %% "scala-logging-slf4j"          % scalaLogging,
-        "org.scalatest"               %% "scalatest"                    % scalaTestV            % "test",
-        "org.scalamock"               %% "scalamock-scalatest-support"  % scalaMockV            % "test"
+        "io.dropwizard.metrics" % "metrics-core" % dropwizardMetricsV,
+        "com.typesafe.scala-logging" %% "scala-logging-slf4j" % scalaLogging,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
+        "org.scalamock" %% "scalamock-scalatest-support" % scalaMockV % "test"
       )
     })
 
@@ -47,12 +49,12 @@ lazy val httpClient = project.in(file("http-client"))
   .settings(
     name := "influxdb-reporter-http-client",
     libraryDependencies ++= {
-      val typesafeConfigV     = "1.3.0"
-      val dispatchV           = "0.11.2"
+      val typesafeConfigV = "1.3.0"
+      val dispatchV = "0.11.2"
 
       Seq(
-        "com.typesafe"                 % "config"               % typesafeConfigV,
-        "net.databinder.dispatch"     %% "dispatch-core"        % dispatchV
+        "com.typesafe" % "config" % typesafeConfigV,
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV
       )
     }
   )
@@ -67,7 +69,7 @@ lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
       val findbugsV = "3.0.1"
 
       Seq(
-        "com.google.code.findbugs"      % "jsr305"              % findbugsV
+        "com.google.code.findbugs" % "jsr305" % findbugsV
       )
     }
   )

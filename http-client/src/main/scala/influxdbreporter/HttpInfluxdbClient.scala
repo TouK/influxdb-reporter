@@ -24,6 +24,7 @@ import influxdbreporter.core.writers.WriterData
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import scala.language.postfixOps
 
 class HttpInfluxdbClient(connectionData: ConnectionData)
                         (implicit executionContext: ExecutionContext, requestTimeout: FiniteDuration)

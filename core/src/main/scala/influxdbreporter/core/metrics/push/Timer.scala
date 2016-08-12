@@ -22,9 +22,10 @@ import influxdbreporter.core.Tag
 import influxdbreporter.core.metrics.Metric._
 
 import scala.annotation.varargs
+import scala.language.postfixOps
 
 sealed trait TimerContext {
-  def stop()
+  @varargs def stop(tags: Tag*): Unit
 }
 
 class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
@@ -40,14 +41,17 @@ class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
   private def notify(tags: List[Tag], time: Long): Unit =
     increaseMetric(tags, _.update(time, TimeUnit.NANOSECONDS))
 
-  private class InfluxTimerContextImpl(tags: List[Tag], listener: Timer)
+  private class InfluxTimerContextImpl(startingTags: List[Tag], listener: Timer)
     extends TimerContext {
 
     val clock = Clock.defaultClock
     val startTime = clock.getTick
 
-    override def stop(): Unit = {
-      listener.notify(tags, clock.getTick - startTime)
+    override def stop(tags: Tag*): Unit = {
+      listener.notify(
+        List(tags: _*) ::: startingTags,
+        clock.getTick - startTime
+      )
     }
   }
 

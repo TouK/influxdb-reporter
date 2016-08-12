@@ -72,6 +72,8 @@ trait RegisterMagnet[T] {
 
 object RegisterMagnet {
 
+  import scala.language.implicitConversions
+
   private val registerMagnetForCounters = new RegisterMagnetFromMetric[Counter, CodahaleCounter]
   private val registerMagnetForCodehaleCounters = new RegisterMagnetFromCodehaleMetric[CodahaleCounter]
   private val registerMagnetForHistogram = new RegisterMagnetFromMetric[Histogram, CodahaleHistogram]
