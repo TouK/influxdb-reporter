@@ -67,7 +67,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
       }
     }
 
-    (0 to 100) foreach { case idx =>
+    (0 to 100) foreach { idx =>
       val counter = metricsRegistry.register(s"mycounter-$idx", new Counter)
       counter.inc()
     }
@@ -80,7 +80,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
   "Reporter cannot be started twice" in {
     val reporter = createReporter(new SkipSendingClient)
     reporter.start()
-    intercept[ReporterAlreadyStartedException] {
+    intercept[ReporterAlreadyStartedException.type] {
       reporter.start()
     }
   }

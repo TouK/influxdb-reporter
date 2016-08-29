@@ -54,7 +54,7 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
       logger.info(s"Influxdb scheduled reporter was started with ${interval.toSeconds}s report interval")
       stoppableTask
     } else {
-      throw new ReporterAlreadyStartedException()
+      throw ReporterAlreadyStartedException
     }
   }
 
@@ -79,7 +79,7 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
   }
 }
 
-case class ReporterAlreadyStartedException() extends Exception("Reporter has been already started")
+case object ReporterAlreadyStartedException extends Exception("Reporter has been already started")
 
 trait StoppableReportingTask {
   def stop(): Unit
