@@ -19,6 +19,7 @@ import influxdbreporter.core.MetricRegistry$;
 import influxdbreporter.core.MetricRegistryImpl;
 import influxdbreporter.core.RegisterMagnet;
 import influxdbreporter.core.metrics.Metric;
+import influxdbreporter.core.metrics.pull.PullingGauge;
 import influxdbreporter.core.metrics.push.*;
 import influxdbreporter.javawrapper.collectors.*;
 
@@ -76,6 +77,7 @@ public class MetricRegistry {
         else if (metric instanceof Meter) return MeterCollector.COLLECTOR;
         else if (metric instanceof Timer) return TimerCollector.COLLECTOR;
         else if (metric instanceof DiscreteGauge) return GaugeCollector.collector();
+        else if (metric instanceof PullingGauge) return GaugeCollector.collector();
         else throw new IllegalArgumentException("Unknown metric type: " + metric.getClass().getName());
     }
 }
