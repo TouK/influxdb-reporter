@@ -39,8 +39,8 @@ lazy val core = project.in(file("core"))
       Seq(
         "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
         "com.typesafe.scala-logging"  %% "scala-logging-slf4j"          % scalaLogging,
-        "org.scalatest"               %% "scalatest"                    % scalaTestV            % "test",
-        "org.scalamock"               %% "scalamock-scalatest-support"  % scalaMockV            % "test"
+        "org.scalatest"               %% "scalatest"                    % scalaTestV % "test",
+        "org.scalamock"               %% "scalamock-scalatest-support"  % scalaMockV % "test"
       )
     })
 
@@ -53,8 +53,8 @@ lazy val httpClient = project.in(file("http-client"))
       val dispatchV           = "0.11.2"
 
       Seq(
-        "com.typesafe"                 % "config"               % typesafeConfigV,
-        "net.databinder.dispatch"     %% "dispatch-core"        % dispatchV
+        "com.typesafe" % "config" % typesafeConfigV,
+        "net.databinder.dispatch" %% "dispatch-core" % dispatchV
       )
     }
   )
@@ -66,14 +66,31 @@ lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
     name := "influxdb-reporter-http-client-java-wrapper",
     javacOptions in doc := Seq("-source", "1.7"),
     libraryDependencies ++= {
-      val findbugsV = "3.0.1"
+      val findbugsV           = "3.0.1"
+      val junitV              = "4.12"
 
       Seq(
-        "com.google.code.findbugs"      % "jsr305"              % findbugsV
+        "com.google.code.findbugs" % "jsr305" % findbugsV,
+        "junit"                    % "junit"  % junitV      % "test"
       )
     }
   )
   .dependsOn(httpClient)
+
+lazy val hikariCPTracker = project.in(file("hikariCP-tracker"))
+  .settings(commonSettings)
+  .settings(
+    name := "influxdb-reporter-hikariCP-tracker",
+    javacOptions in doc := Seq("-source", "1.7"),
+    libraryDependencies ++= {
+      val hikariCPV           = "2.4.7"
+
+      Seq(
+        "com.zaxxer" % "HikariCP" % hikariCPV
+      )
+    }
+  )
+  .dependsOn(httpClientJavaWrapper)
 
 publish := {}
 publishLocal := {}

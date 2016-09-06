@@ -19,10 +19,9 @@ import influxdbreporter.core.MetricRegistry$;
 import influxdbreporter.core.MetricRegistryImpl;
 import influxdbreporter.core.RegisterMagnet;
 import influxdbreporter.core.metrics.Metric;
+import influxdbreporter.core.metrics.pull.PullingGauge;
 import influxdbreporter.core.metrics.push.*;
-import influxdbreporter.core.utils.UtcClock$;
 import influxdbreporter.javawrapper.collectors.*;
-import scala.Int;
 
 public class MetricRegistry {
 
@@ -30,7 +29,10 @@ public class MetricRegistry {
 
     public MetricRegistry(String prefix) {
         scalaRegistry = MetricRegistry$.MODULE$.apply(prefix);
-        metricCollectorOfMetric(new DiscreteGauge<Int>(UtcClock$.MODULE$));
+    }
+
+    public MetricRegistry(influxdbreporter.core.MetricRegistry scalaRegistry) {
+        this.scalaRegistry = scalaRegistry;
     }
 
     public <U extends com.codahale.metrics.Metric, T extends Metric<U>> T register(final String name, final T metric) {
@@ -75,6 +77,7 @@ public class MetricRegistry {
         else if (metric instanceof Meter) return MeterCollector.COLLECTOR;
         else if (metric instanceof Timer) return TimerCollector.COLLECTOR;
         else if (metric instanceof DiscreteGauge) return GaugeCollector.collector();
+        else if (metric instanceof PullingGauge) return GaugeCollector.collector();
         else throw new IllegalArgumentException("Unknown metric type: " + metric.getClass().getName());
     }
 }

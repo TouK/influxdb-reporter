@@ -29,13 +29,25 @@ public class InfluxdbReporter {
 
     private final influxdbreporter.core.InfluxdbReporter<String> reporter;
 
-    public InfluxdbReporter(MetricRegistry registry, MetricClient<String> client, long interval, TimeUnit unit, int bufferSize) {
+
+    public InfluxdbReporter(MetricRegistry registry,
+                            MetricClient<String> client,
+                            long reportInterval,
+                            TimeUnit reportIntervalUnit)  {
+        this(registry, client, reportInterval, reportIntervalUnit, 0);
+    }
+
+    public InfluxdbReporter(MetricRegistry registry,
+                            MetricClient<String> client,
+                            long reportInterval,
+                            TimeUnit reportIntervalUnit,
+                            int bufferSize) {
         WriterDataBuffer<String> dataBuffer = new FixedSizeWriterDataBuffer<>(bufferSize);
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
                 new LineProtocolWriter(List$.MODULE$.<Tag>empty()),
                 client,
-                FiniteDuration.apply(interval, unit),
+                FiniteDuration.apply(reportInterval, reportIntervalUnit),
                 new InfluxBatcher<String>(),
                 new Some<>(dataBuffer),
                 UtcClock$.MODULE$,

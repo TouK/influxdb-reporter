@@ -25,7 +25,10 @@ import scala.annotation.varargs
 import scala.language.postfixOps
 
 sealed trait TimerContext {
-  @varargs def stop(tags: Tag*): Unit
+  // cause of: https://issues.scala-lang.org/browse/SI-1459
+  def stop(): Unit
+
+  @varargs def stop(tag: Tag, tags: Tag*): Unit
 }
 
 class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
@@ -47,9 +50,17 @@ class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
     val clock = Clock.defaultClock
     val startTime = clock.getTick
 
-    override def stop(tags: Tag*): Unit = {
+    override def stop(tag: Tag, tags: Tag*): Unit = {
+      stopWithTags(tags :+ tag)
+    }
+
+    override def stop(): Unit = {
+      stopWithTags(Seq.empty[Tag])
+    }
+
+    private def stopWithTags(tags: Seq[Tag]) = {
       listener.notify(
-        List(tags: _*) ::: startingTags,
+        tags.toList ::: startingTags,
         clock.getTick - startTime
       )
     }
