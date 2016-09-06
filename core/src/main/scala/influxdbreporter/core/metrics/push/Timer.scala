@@ -26,8 +26,9 @@ import scala.language.postfixOps
 
 sealed trait TimerContext {
   // cause of: https://issues.scala-lang.org/browse/SI-1459
-  @varargs def stop(tag: Tag, tags: Tag*): Unit
   def stop(): Unit
+
+  @varargs def stop(tag: Tag, tags: Tag*): Unit
 }
 
 class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
