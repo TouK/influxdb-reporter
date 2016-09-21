@@ -2,7 +2,7 @@ import sbt.Keys._
 import com.banno.license.Plugin.LicenseKeys._
 import com.banno.license.Licenses._
 
-crossScalaVersions := Seq("2.10.6", "2.11.7")
+crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 val commonSettings =
   licenseSettings ++
@@ -30,15 +30,15 @@ lazy val core = project.in(file("core"))
   .settings(commonSettings)
   .settings(
     name := "influxdb-reporter-core",
-    libraryDependencies ++= {
+    libraryDependencies <++= scalaVersion { v =>
       val dropwizardMetricsV  = "3.1.2"
-      val scalaLogging        = "2.1.2"
+      val scalaLoggingV       = "3.6.0-SNAPSHOT"
       val scalaTestV          = "2.2.6"
       val scalaMockV          = "3.2.2"
 
       Seq(
         "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
-        "com.typesafe.scala-logging"  %% "scala-logging-slf4j"          % scalaLogging,
+        "com.typesafe.scala-logging"  %% "scala-logging"                % scalaLoggingV,
         "org.scalatest"               %% "scalatest"                    % scalaTestV % "test",
         "org.scalamock"               %% "scalamock-scalatest-support"  % scalaMockV % "test"
       )
