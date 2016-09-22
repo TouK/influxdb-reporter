@@ -16,7 +16,7 @@
 package influxdbreporter.core
 
 import com.codahale.metrics.Clock
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 import influxdbreporter.core.metrics.Metric._

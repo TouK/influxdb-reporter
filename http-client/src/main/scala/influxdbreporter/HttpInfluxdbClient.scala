@@ -16,7 +16,7 @@
 package influxdbreporter
 
 import com.ning.http.client.Response
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import dispatch.{Http, Req, url}
 import influxdbreporter.core.MetricClient
 import influxdbreporter.core.writers.WriterData
