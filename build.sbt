@@ -30,6 +30,10 @@ lazy val core = project.in(file("core"))
   .settings(commonSettings)
   .settings(
     name := "influxdb-reporter-core",
+    resolvers in ThisBuild ++= Seq(
+      "TouK repo releases"                   at "https://philanthropist.touk.pl/nexus/content/repositories/releases",
+      "TouK repo snapshots"                  at "https://philanthropist.touk.pl/nexus/content/repositories/snapshots"
+    ),
     libraryDependencies <++= scalaVersion { v =>
       val dropwizardMetricsV  = "3.1.2"
       val scalaLoggingV       = "3.6.0-SNAPSHOT"
