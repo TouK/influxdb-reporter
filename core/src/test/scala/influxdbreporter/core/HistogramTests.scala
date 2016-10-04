@@ -59,18 +59,18 @@ class HistogramTests extends BaseMetricTest {
 
   private def assertPhase: PhaseAssert = (phase, _, fields, tags) => phase match {
     case PhaseOne => tags match {
-      case list if list == List(tag1, tag2) => checkRunCount(fields, 2)
-      case t1 :: Nil if t1 == tag1 => checkRunCount(fields, 1)
-      case Nil => checkRunCount(fields, 1)
+      case set if set == Set(tag1, tag2) => checkRunCount(fields, 2)
+      case set if set == Set(tag1) => checkRunCount(fields, 1)
+      case set if set.isEmpty => checkRunCount(fields, 1)
     }
     case PhaseTwo => tags match {
-      case t2 :: Nil if t2 == tag2 => checkRunCount(fields, 2)
-      case t1 :: Nil if t1 == tag1 => checkRunCount(fields, 1)
+      case set if set == Set(tag2) => checkRunCount(fields, 2)
+      case set if set == Set(tag1) => checkRunCount(fields, 1)
     }
     case PhaseThree => tags match {
-      case list@xs :: x :: Nil if list.diff(List(tag1, tag2)).isEmpty => checkRunCount(fields, 2)
-      case t1 :: Nil if t1 == tag1 => checkRunCount(fields, 1)
-      case Nil => checkRunCount(fields, 2)
+      case set if set == Set(tag1, tag2) => checkRunCount(fields, 2)
+      case set if set == Set(tag1) => checkRunCount(fields, 1)
+      case set if set.isEmpty => checkRunCount(fields, 2)
     }
   }
 

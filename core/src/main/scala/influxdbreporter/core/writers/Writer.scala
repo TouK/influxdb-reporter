@@ -19,16 +19,16 @@ import influxdbreporter.core.{Field, Tag}
 
 trait Writer[T] {
 
-  def write(measurement: String, fields: List[Field], tags: List[Tag], timestamp: Long): WriterData[T]
+  def write(measurement: String, fields: List[Field], tags: Set[Tag], timestamp: Long): WriterData[T]
 
-  def write(measurement: String, field: Field, tags: List[Tag], timestamp: Long): WriterData[T] =
+  def write(measurement: String, field: Field, tags: Set[Tag], timestamp: Long): WriterData[T] =
     write(measurement, List(field), tags, timestamp)
 
   def write(measurement: String, field: Field, tag: Tag, timestamp: Long): WriterData[T] =
-    write(measurement, List(field), List(tag), timestamp)
+    write(measurement, List(field), Set(tag), timestamp)
 
   def write(measurement: String, field: Field, timestamp: Long): WriterData[T] =
-    write(measurement, List(field), List.empty, timestamp)
+    write(measurement, List(field), Set.empty[Tag], timestamp)
 }
 
 case class WriterData[T](data: T)

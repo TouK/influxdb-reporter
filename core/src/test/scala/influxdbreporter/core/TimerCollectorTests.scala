@@ -31,6 +31,7 @@ class TimerCollectorTests extends WordSpec with MockFactory {
   val measurementName = s"$name.timer"
   val timestamp = 10000000L
   val tagList = Tag("key1", 1) :: Nil
+  val tagSet = tagList.toSet
   val timerFields = List(
     fieldD(OneMinuteField), fieldI(CountField), fieldD(Percentile50Field), fieldD(Percentile75Field), fieldD(MeanField),
     fieldD(MinField), fieldI(RunCountField), fieldD(MaxField), fieldD(Percentile99Field), fieldD(Percentile95Field),
@@ -39,16 +40,16 @@ class TimerCollectorTests extends WordSpec with MockFactory {
 
   "A TimerCollector" should {
     "write collector specific fields" in {
-      (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
-        .expects(measurementName, timerFields, tagList, timestamp)
+      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
+        .expects(measurementName, timerFields, tagList.toSet[Tag], timestamp)
       SecondTimerCollector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
     }
 
     "write collector specific fields and static tags" in {
       val staticTags = Tag("st1", "static tag") :: Nil
       val timerCollector = new TimerCollector(TimeUnit.SECONDS, staticTags)
-      (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
-        .expects(measurementName, timerFields, tagList ::: staticTags , timestamp)
+      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
+        .expects(measurementName, timerFields, tagList.toSet ++ staticTags , timestamp)
       timerCollector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
     }
 
@@ -62,8 +63,8 @@ class TimerCollectorTests extends WordSpec with MockFactory {
           Some(field)
         }
       }
-      (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
-        .expects(measurementName, filteredFields, tagList, timestamp)
+      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
+        .expects(measurementName, filteredFields, tagList.toSet[Tag], timestamp)
 
       collector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
     }
@@ -81,9 +82,9 @@ class TimerCollectorTests extends WordSpec with MockFactory {
         }
       }
 
-      (writerMock.write(_: String, _: List[Field], _: List[Tag], _: Long))
+      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
         .expects(where {
-          case (`measurementName`, fields, `tagList`, `timestamp`) =>
+          case (`measurementName`, fields, `tagSet`, `timestamp`) =>
             fields.find(_.key == RunCountField).exists(_.value.isInstanceOf[Double])
           case _ => false
         })

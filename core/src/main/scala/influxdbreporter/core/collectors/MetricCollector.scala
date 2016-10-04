@@ -41,7 +41,7 @@ abstract class BaseMetricCollector[T <: CodahaleMetric, V <: BaseMetricCollector
       case Nil =>
         None
       case fields =>
-        Some(writer.write(s"$name.$measurementName", filterFields(metric), tags.toList ::: staticTags, timestamp))
+        Some(writer.write(s"$name.$measurementName", filterFields(metric), tags.toSet ++ staticTags, timestamp))
     }
   }
 

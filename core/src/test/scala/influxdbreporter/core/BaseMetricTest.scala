@@ -43,7 +43,7 @@ abstract class BaseMetricTest extends WordSpec with ScalaFutures {
   case object PhaseThree extends Phase
 
   type PhaseChangeAction = Phase => Unit
-  type PhaseAssert = (Phase, String, List[Field], List[Tag]) => Boolean
+  type PhaseAssert = (Phase, String, List[Field], Set[Tag]) => Boolean
 
   class MockMetricClient(writer: MockInfluxdbWriterWithPhaseAssertions) extends MetricClient[List[TestData]] {
     override def sendData(data: List[WriterData[List[TestData]]]): Future[Boolean] = {
@@ -60,7 +60,7 @@ abstract class BaseMetricTest extends WordSpec with ScalaFutures {
     private var currentPhase: Phase = PhaseOne
     phaseChange(safeCurrentPhase())
 
-    override def write(measurement: String, fields: List[Field], tags: List[Tag], timestamp: Long): WriterData[List[TestData]] = {
+    override def write(measurement: String, fields: List[Field], tags: Set[Tag], timestamp: Long): WriterData[List[TestData]] = {
       val phase = safeCurrentPhase()
       if (!assertPhase(phase, measurement, fields, tags)) {
         waiter(fail(s"In phase $phase these data {[name:[$measurement], fields:[$fields], tags:[$tags]} were not expected"))
@@ -93,6 +93,6 @@ abstract class BaseMetricTest extends WordSpec with ScalaFutures {
 
   }
 
-  case class TestData(name: String, fields: List[Field], tags: List[Tag])
+  case class TestData(name: String, fields: List[Field], tags: Set[Tag])
 
 }

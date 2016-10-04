@@ -37,40 +37,40 @@ class CounterTests extends BaseMetricTest {
   }
 
   private val phaseOneTags = List(
-    Tag("strength", 1) :: Nil,
-    Tag("strength", 2) :: Nil,
-    Tag("strength", 1) :: Tag("strength", 2) :: Nil,
-    Tag("strength", 2) :: Nil
+    Set(Tag("strength", 1)),
+    Set(Tag("strength", 2)),
+    Set(Tag("strength", 1), Tag("strength", 2)),
+    Set(Tag("strength", 2))
   )
   private val phaseTwoTags = List(
-    Tag("strength", 1) :: Nil
+    Set(Tag("strength", 1))
   )
   private val phaseThreeTags = List(
-    Tag("strength", 2) :: Tag("strength", 1) :: Nil,
-    Tag("strength", 1) :: Tag("strength", 2) :: Nil
+    Set(Tag("strength", 2), Tag("strength", 1)),
+    Set(Tag("strength", 1), Tag("strength", 2))
   )
 
   private def onPhaseChange(registeredCounter: Counter): PhaseChangeAction = phase =>
     phaseTags(phase).foreach { tags =>
-      registeredCounter.inc(tags: _*)
+      registeredCounter.inc(tags.toList: _*)
     }
 
   private def assertPhase: PhaseAssert = (phase, measurement, fields, tags) =>
     validateNameAndPhaseTagsAndCounts(measurement, phaseTags(phase), tags, fields)
 
-  private def phaseTags: Phase => List[List[Tag]] = {
+  private def phaseTags: Phase => List[Set[Tag]] = {
     case PhaseOne => phaseOneTags
     case PhaseTwo => phaseTwoTags
     case PhaseThree => phaseThreeTags
   }
 
   private def validateNameAndPhaseTagsAndCounts(measurement: String,
-                                                phaseTags: List[List[Tag]],
-                                                tags: List[Tag],
+                                                phaseTags: List[Set[Tag]],
+                                                tags: Set[Tag],
                                                 fields: List[Field]): Boolean =
     measurement.contains("mycounter") && phaseTags.contains(tags) && checkCount(fields, tags, phaseTags)
 
-  private def checkCount(fields: List[Field], tags: List[Tag], phaseTags: List[List[Tag]]) =
+  private def checkCount(fields: List[Field], tags: Set[Tag], phaseTags: List[Set[Tag]]) =
     fields.exists(f => f.key == "count" && phaseTags.contains(tags))
 
 }

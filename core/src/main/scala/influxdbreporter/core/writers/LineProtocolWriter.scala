@@ -17,22 +17,35 @@ package influxdbreporter.core.writers
 
 import java.text.{DecimalFormat, DecimalFormatSymbols}
 
+import com.typesafe.scalalogging.LazyLogging
 import influxdbreporter.core.{Field, Tag}
 
-class LineProtocolWriter(staticTags: List[Tag] = Nil) extends BaseWriterWithStaticTags[String](staticTags) {
+class LineProtocolWriter(staticTags: List[Tag] = Nil)
+  extends BaseWriterWithStaticTags[String](staticTags) with LazyLogging {
 
   import LineProtocolPartsFormatter._
 
   override def write(measurement: String,
                      fields: List[Field],
-                     tags: List[Tag],
-                     timestamp: Long): WriterData[String] =
-    WriterData {
-      s"${formatMeasurementName(measurement)}${tagsToString(tags ::: staticTags)}${fieldsToString(fields)} $timestamp\n"
+                     tags: Set[Tag],
+                     timestamp: Long): WriterData[String] = {
+    val allTags = tags ++ staticTags
+    val filteredTags = filterTagsWithDuplicatedName(allTags)
+    if(allTags.size != filteredTags.size) {
+      val diff = allTags.diff(filteredTags)
+      logger.warn(s"Duplicated tags [${diff.map(t => s"${t.key}=${t.value.toString}").mkString(",")}] were rejected and not sent to influxdb")
     }
+    WriterData {
+      s"${formatMeasurementName(measurement)}${tagsToString(filteredTags)}${fieldsToString(fields)} $timestamp\n"
+    }
+  }
 
-  private def tagsToString(tags: List[Tag]): String =
-    tags
+  private def filterTagsWithDuplicatedName(tags: Set[Tag]): Set[Tag] = {
+    tags.groupBy(_.key).map(_._2.head).toSet
+  }
+
+  private def tagsToString(tags: Set[Tag]): String =
+    tags.toList
       .sortBy(_.key)(Ordering[String].reverse)
       .map(tag => (formatTagName(tag.key), formatTagValueIfValueIsCorrect(tag.value)))
       .foldLeft(List.empty[String]) {
