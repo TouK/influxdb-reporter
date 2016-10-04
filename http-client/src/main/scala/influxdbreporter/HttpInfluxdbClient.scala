@@ -59,7 +59,7 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
     def requestBodyToString(req: Req) = new String(req.toRequest.getByteData, LoadEncoding)
     result onComplete {
       case Success(response) if isResponseSucceed(response) =>
-        logger.info(s"Data was sent and successfully written")
+        logger.debug(s"Data was sent and successfully written")
       case Success(response) =>
         logger.warn(s"Request: ${request.toRequest}\nInfluxdb cannot handle request with metrics: status=[${response.getStatusCode}]")
         logger.debug(s"Request body:\\n${requestBodyToString(request)}")

@@ -18,7 +18,6 @@ package influxdbreporter.core
 import java.util.concurrent.TimeUnit
 
 import influxdbreporter.core.metrics.pull.{PullingGauge, ValueByTag}
-import influxdbreporter.core.metrics.push.DiscreteGauge
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
@@ -55,9 +54,9 @@ class PullingGaugeTests extends BaseMetricTest {
   }
 
   private def assertPhase: PhaseAssert = (phase, _, fields, tags) => phase match {
-    case PhaseOne => checkValueEquals(fields, 1) && tags == List(Tag("tag1", 2))
-    case PhaseTwo => checkValueEquals(fields, 3) && tags == List(Tag("tag1", 4))
-    case PhaseThree => checkValueEquals(fields, 5) && tags == List(Tag("tag1", 6))
+    case PhaseOne => checkValueEquals(fields, 1) && tags == Set(Tag("tag1", 2))
+    case PhaseTwo => checkValueEquals(fields, 3) && tags == Set(Tag("tag1", 4))
+    case PhaseThree => checkValueEquals(fields, 5) && tags == Set(Tag("tag1", 6))
   }
 
   private def checkValueEquals(fields: List[Field], expectedCount: Int) =

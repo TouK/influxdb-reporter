@@ -16,9 +16,9 @@
 package influxdbreporter.core
 
 import influxdbreporter.core.writers.{LineProtocolWriter, WriterData}
-import org.scalatest.WordSpec
+import org.scalatest.{Matchers, WordSpec}
 
-class LineProtocolWriterTests extends WordSpec {
+class LineProtocolWriterTests extends WordSpec with Matchers {
 
   private val lineProtocolWriter = new LineProtocolWriter()
 
@@ -54,7 +54,7 @@ class LineProtocolWriterTests extends WordSpec {
 
     "generate data with sorted tags" in {
       assertResult(WriterData[String]("measurement,a=2,b=2,c=2,d=2 f=1i 1000000\n")) {
-        lineProtocolWriter.write("measurement", Field("f", 1), Tag("b", 2) :: Tag("d", 2) :: Tag("a", 2) :: Tag("c", 2) :: Nil , 1000000L)
+        lineProtocolWriter.write("measurement", Field("f", 1), Set(Tag("b", 2), Tag("d", 2), Tag("a", 2), Tag("c", 2)), 1000000L)
       }
     }
 
@@ -201,6 +201,24 @@ class LineProtocolWriterTests extends WordSpec {
           lineProtocolWriter.write("measurement1", Field("f\"a", 1), Tag("a", 2), 1000000L)
         }
       }
+    }
+
+    "distinct tags by name" in {
+      assertResult(WriterData[String]("measurement,t=2 f=1i 1000000\n")) {
+        lineProtocolWriter.write("measurement", Field("f", 1), Set(Tag("t", 2), Tag("t", 2)), 1000000L)
+      }
+
+      lineProtocolWriter.write("measurement", Field("f", 1), Set(Tag("t", 2), Tag("t", 1)), 1000000L)
+        .data should fullyMatch regex "measurement,t=\\d f=1i 1000000\n"
+
+      val lineProtocolWriterWithOneStaticTag = new LineProtocolWriter(Tag("t", 2) :: Nil)
+      lineProtocolWriterWithOneStaticTag.write("measurement", Field("f", 1), Set(Tag("t", 2)), 1000000L)
+        .data should fullyMatch regex "measurement,t=\\d f=1i 1000000\n"
+
+      val lineProtocolWriterWithTwoStaticTags = new LineProtocolWriter(Tag("t", 2) :: Tag("t", 1) :: Nil)
+      lineProtocolWriterWithTwoStaticTags.write("measurement", Field("f", 1), Set(Tag("t", 2)), 1000000L)
+        .data should fullyMatch regex "measurement,t=\\d f=1i 1000000\n"
+
     }
   }
 }
