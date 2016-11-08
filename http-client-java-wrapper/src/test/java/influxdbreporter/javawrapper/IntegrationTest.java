@@ -17,6 +17,7 @@ package influxdbreporter.javawrapper;
 
 import influxdbreporter.ConnectionData;
 import influxdbreporter.core.StoppableReportingTask;
+import influxdbreporter.core.Tag;
 import influxdbreporter.core.metrics.push.Timer;
 import influxdbreporter.core.metrics.push.TimerContext;
 import org.junit.Test;
@@ -37,6 +38,9 @@ public class IntegrationTest {
 
         TimerContext t1Context = t1.time();
         t1Context.stop();
+
+        TimerContext t2Context = t1.time();
+        t2Context.stop(new Tag("t1", 1), new Tag("t2", 2));
 
         registry.unregister("t1");
         task.stop();
