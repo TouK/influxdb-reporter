@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import influxdbreporter.core.metrics.push.Counter
 import influxdbreporter.core.writers.WriterData
 import org.scalatest.WordSpec
-import org.scalatest.concurrent.AsyncAssertions.Waiter
+import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.SpanSugar._
 

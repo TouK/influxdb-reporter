@@ -24,7 +24,7 @@ import influxdbreporter.core.metrics.push.{Counter, Meter, Timer}
 import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.writers.{LineProtocolWriter, Writer, WriterData}
 import org.scalatest.WordSpec
-import org.scalatest.concurrent.AsyncAssertions.Waiter
+import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 

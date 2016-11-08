@@ -15,11 +15,10 @@
  */
 package influxdbreporter
 
-import com.ning.http.client.Response
 import com.typesafe.scalalogging.LazyLogging
-import dispatch.{Http, Req, url}
 import influxdbreporter.core.MetricClient
 import influxdbreporter.core.writers.WriterData
+import org.asynchttpclient._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,37 +33,39 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
   private val LoadEncoding = "UTF-8"
   private val InfluxSuccessStatusCode = 204
 
-  private val influxdbWriteUrl = url(s"http://${connectionData.address}:${connectionData.port}/write")
-    .addQueryParameter("db", connectionData.dbName)
-    .addQueryParameter("u", connectionData.user)
-    .addQueryParameter("p", connectionData.password)
+  private lazy val httpClient = new AsyncHttpClientWrapper(
+    new DefaultAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
+      .setMaxConnectionsPerHost(MaxConnections)
+      .setMaxConnections(MaxConnections)
+      .setRequestTimeout(requestTimeout.toMillis.toInt)
+      .build()
+    ))
 
-  // Keep it lazy. See https://github.com/eed3si9n/scalaxb/pull/279
-  private lazy val httpClient = Http.configure(builder =>
-    builder.setAllowPoolingConnection(true)
-      .setMaximumConnectionsPerHost(MaxConnections)
-      .setMaximumConnectionsTotal(MaxConnections)
-      .setRequestTimeoutInMs(requestTimeout.toMillis.toInt)
-  )
+  private val influxdbWriteRequestBuilder = httpClient.underlying
+    .preparePost(s"http://${connectionData.address}:${connectionData.port}/write")
+    .addQueryParam("db", connectionData.dbName)
+    .addQueryParam("u", connectionData.user)
+    .addQueryParam("p", connectionData.password)
 
   override def sendData(writerData: List[WriterData[String]]): Future[Boolean] = {
     val influxData = writerData map (_.data) mkString
-    val request: Req = influxdbWriteUrl.POST.setBody(influxData.getBytes(LoadEncoding))
+    val request = influxdbWriteRequestBuilder.setBody(influxData.getBytes(LoadEncoding)).build()
     logRequestResponse(request) {
-      httpClient(request > (response => response))
+      httpClient.send(request)
     } map isResponseSucceed
   }
 
-  private def logRequestResponse(request: Req): (Future[Response] => Future[Response]) = result => {
-    def requestBodyToString(req: Req) = new String(req.toRequest.getByteData, LoadEncoding)
+  private def logRequestResponse(request: Request): (Future[Response] => Future[Response]) = result => {
+    def requestBodyToString(req: Request) = new String(req.getByteData, LoadEncoding)
+
     result onComplete {
       case Success(response) if isResponseSucceed(response) =>
         logger.debug(s"Data was sent and successfully written")
       case Success(response) =>
-        logger.warn(s"Request: ${request.toRequest}\nInfluxdb cannot handle request with metrics: status=[${response.getStatusCode}]")
+        logger.warn(s"Request: $request\nInfluxdb cannot handle request with metrics: status=[${response.getStatusCode}]")
         logger.debug(s"Request body:\\n${requestBodyToString(request)}")
       case Failure(ex) =>
-        logger.error(s"Request: ${request.toRequest}\nInfluxdb cannot handle request with metrics:", ex)
+        logger.error(s"Request: $request\nInfluxdb cannot handle request with metrics:", ex)
         logger.debug(s"Request body:\\n${requestBodyToString(request)}")
     }
     result
