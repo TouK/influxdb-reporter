@@ -2,7 +2,7 @@ import sbt.Keys._
 import com.banno.license.Plugin.LicenseKeys._
 import com.banno.license.Licenses._
 
-crossScalaVersions := Seq("2.10.6", "2.11.8")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0")
 
 val commonSettings =
   licenseSettings ++
@@ -10,7 +10,7 @@ val commonSettings =
       organization := "pl.touk.influxdb-reporter",
       javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
       scalacOptions := Seq(
-        "-target:jvm-1.7", "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
+        "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
       ),
       removeExistingHeaderBlock := true,
       license := apache2("Copyright 2015"),
@@ -37,14 +37,14 @@ lazy val core = project.in(file("core"))
     libraryDependencies <++= scalaVersion { v =>
       val dropwizardMetricsV  = "3.1.2"
       val scalaLoggingV       = "3.6.0-SNAPSHOT"
-      val scalaTestV          = "2.2.6"
-      val scalaMockV          = "3.2.2"
+      val scalaTestV          = "3.0.0"
+      val mockitoV            = "2.2.13"
 
       Seq(
         "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
         "com.typesafe.scala-logging"  %% "scala-logging"                % scalaLoggingV,
         "org.scalatest"               %% "scalatest"                    % scalaTestV % "test",
-        "org.scalamock"               %% "scalamock-scalatest-support"  % scalaMockV % "test"
+        "org.mockito"                  % "mockito-core"                 % mockitoV % "test"
       )
     })
 
@@ -54,11 +54,11 @@ lazy val httpClient = project.in(file("http-client"))
     name := "influxdb-reporter-http-client",
     libraryDependencies ++= {
       val typesafeConfigV     = "1.3.0"
-      val dispatchV           = "0.11.2"
+      val asyncHttpClientV    = "2.0.27"
 
       Seq(
-        "com.typesafe" % "config" % typesafeConfigV,
-        "net.databinder.dispatch" %% "dispatch-core" % dispatchV
+        "com.typesafe"          % "config"            % typesafeConfigV,
+        "org.asynchttpclient"   % "async-http-client" % asyncHttpClientV
       )
     }
   )

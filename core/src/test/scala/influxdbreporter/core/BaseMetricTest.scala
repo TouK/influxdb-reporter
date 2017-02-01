@@ -17,7 +17,7 @@ package influxdbreporter.core
 
 import influxdbreporter.core.writers.{Writer, WriterData}
 import org.scalatest.WordSpec
-import org.scalatest.concurrent.AsyncAssertions.Waiter
+import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 

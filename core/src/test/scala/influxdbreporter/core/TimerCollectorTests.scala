@@ -21,12 +21,13 @@ import com.codahale.metrics.Timer
 import influxdbreporter.core.collectors.TimerCollector._
 import influxdbreporter.core.collectors.{SecondTimerCollector, TimerCollector}
 import influxdbreporter.core.writers.Writer
+import org.mockito.{ArgumentCaptor, ArgumentMatchers, Mockito}
+import org.mockito.Mockito.verify
 import org.scalatest.WordSpec
-import org.scalamock.scalatest.MockFactory
+import org.scalatest.mockito.MockitoSugar
 
-class TimerCollectorTests extends WordSpec with MockFactory {
+class TimerCollectorTests extends WordSpec with MockitoSugar {
 
-  val writerMock = mock[Writer[String]]
   val name = "test"
   val measurementName = s"$name.timer"
   val timestamp = 10000000L
@@ -40,20 +41,21 @@ class TimerCollectorTests extends WordSpec with MockFactory {
 
   "A TimerCollector" should {
     "write collector specific fields" in {
-      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
-        .expects(measurementName, timerFields, tagList.toSet[Tag], timestamp)
+      val writerMock = Mockito.mock(classOf[Writer[String]])
       SecondTimerCollector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
+      verify(writerMock).write(measurementName, timerFields, tagList.toSet[Tag], timestamp)
     }
 
     "write collector specific fields and static tags" in {
+      val writerMock = mock[Writer[String]]
       val staticTags = Tag("st1", "static tag") :: Nil
       val timerCollector = new TimerCollector(TimeUnit.SECONDS, staticTags)
-      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
-        .expects(measurementName, timerFields, tagList.toSet ++ staticTags , timestamp)
       timerCollector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
+      verify(writerMock).write(measurementName, timerFields, tagList.toSet ++ staticTags , timestamp)
     }
 
     "write filtered list of fields when collector was properly configured" in {
+      val writerMock = mock[Writer[String]]
       val removedFieldKeys = Percentile50Field :: Percentile75Field :: Percentile95Field :: Percentile99Field :: Percentile999Field :: Nil
       val filteredFields = timerFields.filter(f => !removedFieldKeys.contains(f.key))
       val collector = SecondTimerCollector.withFieldMapper { field =>
@@ -63,13 +65,12 @@ class TimerCollectorTests extends WordSpec with MockFactory {
           Some(field)
         }
       }
-      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
-        .expects(measurementName, filteredFields, tagList.toSet[Tag], timestamp)
-
       collector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
+      verify(writerMock).write(measurementName, filteredFields, tagList.toSet[Tag], timestamp)
     }
 
     "write fields with changed field name and value when collector was properly configured" in {
+      val writerMock = mock[Writer[String]]
       val collector = SecondTimerCollector.withFieldMapper { field =>
         if (field.key == RunCountField) {
           val value = field.value match {
@@ -82,17 +83,18 @@ class TimerCollectorTests extends WordSpec with MockFactory {
         }
       }
 
-      (writerMock.write(_: String, _: List[Field], _: Set[Tag], _: Long))
-        .expects(where {
-          case (`measurementName`, fields, `tagSet`, `timestamp`) =>
-            fields.find(_.key == RunCountField).exists(_.value.isInstanceOf[Double])
-          case _ => false
-        })
-
       collector.collect(writerMock, name, new Timer, timestamp, tagList: _*)
+      val fieldsCaptor: ArgumentCaptor[List[Field]] = ArgumentCaptor.forClass(classOf[List[Field]])
+      val tagsCaptor: ArgumentCaptor[Set[Tag]] = ArgumentCaptor.forClass(classOf[Set[Tag]])
+
+      verify(writerMock).write(ArgumentMatchers.anyString(), fieldsCaptor.capture(),
+        tagsCaptor.capture(), ArgumentMatchers.anyLong())
+
+      assert(fieldsCaptor.getValue.find(_.key == RunCountField).exists(_.value.isInstanceOf[Double]))
     }
 
     "return None when all fields was filtered" in {
+      val writerMock = mock[Writer[String]]
       val collector = SecondTimerCollector.withFieldMapper(_ => None)
       assertResult(None) {
         collector.collect(writerMock, name, new Timer, timestamp, tagList: _*)

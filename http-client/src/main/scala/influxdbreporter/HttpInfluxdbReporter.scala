@@ -24,7 +24,7 @@ import influxdbreporter.core.writers.LineProtocolWriter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 object HttpInfluxdbReporter {
 
@@ -56,7 +56,7 @@ object HttpInfluxdbReporter {
 
   private def getStaticTags(config: Config): List[Tag] =
     Try {
-      config.getConfigList("static-tags")
+      config.getConfigList("static-tags").asScala
         .map(c => Tag(c.getString("name"), c.getString("value")))
         .toList
     }.getOrElse(Nil)
