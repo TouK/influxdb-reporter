@@ -24,13 +24,13 @@ import scala.concurrent.duration.FiniteDuration
 
 trait TestReporterProvider {
 
-  protected def createReporter(metricsClient: MetricClient[String],
+  protected def createReporter(metricsClientFactory: MetricClientFactory[String],
                                metricsRegistry: MetricRegistry = MetricRegistry("simple"),
                                buffer: Option[WriterDataBuffer[String]] = None)
-                              (implicit executionContext: ExecutionContext) = {
+                              (implicit executionContext: ExecutionContext): InfluxdbReporter[String] = {
     new InfluxdbReporter(metricsRegistry,
       new LineProtocolWriter,
-      metricsClient,
+      metricsClientFactory,
       FiniteDuration(500, TimeUnit.MILLISECONDS),
       new SimpleBatcher(5),
       buffer

@@ -28,7 +28,7 @@ class CodehaleCounterTests extends BaseMetricTest {
     val registeredCounter = registry.register("mycounter", new CodahaleCounter)
 
     val mockWriter = createMockWriter(onPhaseChange(registeredCounter), assertPhase)
-    val mockClient = createMockMetricClient(mockWriter)
+    val mockClient = createMockMetricClientFactory(mockWriter)
     val reporter = new InfluxdbReporter(registry, mockWriter, mockClient, FiniteDuration(1, TimeUnit.SECONDS))
     val task = reporter.start()
 

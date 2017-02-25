@@ -21,18 +21,20 @@ import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 abstract class BaseMetricTest extends WordSpec with ScalaFutures {
 
-  implicit val ex = ExecutionContext.global
+  implicit val ex: ExecutionContextExecutor = ExecutionContext.global
 
   protected def createMockWriter(phaseChange: PhaseChangeAction,
                                  assertPhase: PhaseAssert) =
     new MockInfluxdbWriterWithPhaseAssertions(phaseChange, assertPhase)
 
-  protected def createMockMetricClient(writer: MockInfluxdbWriterWithPhaseAssertions) =
-    new MockMetricClient(writer)
+  protected def createMockMetricClientFactory(writer: MockInfluxdbWriterWithPhaseAssertions) =
+    new MetricClientFactory[List[TestData]] {
+      override def create(): MetricClient[List[TestData]] = new MockMetricClient(writer)
+    }
 
   sealed trait Phase
 
@@ -50,6 +52,7 @@ abstract class BaseMetricTest extends WordSpec with ScalaFutures {
       writer.nextPhase()
       Future.successful(true)
     }
+    override def stop(): Unit = {}
   }
 
   class MockInfluxdbWriterWithPhaseAssertions(phaseChange: PhaseChangeAction,
@@ -68,11 +71,11 @@ abstract class BaseMetricTest extends WordSpec with ScalaFutures {
       WriterData(TestData(measurement, fields, tags) :: Nil)
     }
 
-    def nextPhase() = phaseChange {
+    def nextPhase(): Unit = phaseChange {
       safeNextPhase()
     }
 
-    def waitToPhaseThreeEnds() = {
+    def waitToPhaseThreeEnds(): Unit = {
       val testTimeout = org.scalatest.concurrent.PatienceConfiguration.Timeout(Span(10, Seconds))
       waiter.await(testTimeout)
     }

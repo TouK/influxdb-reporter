@@ -19,10 +19,10 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 import com.codahale.metrics.Clock
 import com.typesafe.scalalogging.LazyLogging
-import influxdbreporter.core.writers.{Writer, WriterData}
+import influxdbreporter.core.writers.Writer
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 trait Reporter {
@@ -30,14 +30,10 @@ trait Reporter {
   def start(): StoppableReportingTask
 }
 
-trait Reportable[S] {
-
-  protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean]
-}
-
 abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
                                     interval: FiniteDuration,
                                     writer: Writer[S],
+                                    clientFactory: MetricClientFactory[S],
                                     batcher: Batcher[S],
                                     buffer: Option[WriterDataBuffer[S]],
                                     clock: Clock)
@@ -49,24 +45,25 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
 
   override def start(): StoppableReportingTask = synchronized {
     if (currentStoppableReportingTask.forall(_.isStopped)) {
-      val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob, interval)
+      val client = clientFactory.create()
+      val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob(client), interval, client)
       currentStoppableReportingTask = Some(stoppableTask)
-      logger.info(s"Influxdb scheduled reporter was started with ${interval.toSeconds}s report interval")
+      logger.info(s"Influxdb scheduled reporter was started with $interval report interval")
       stoppableTask
     } else {
       throw ReporterAlreadyStartedException
     }
   }
 
-  private def createTaskJob(rescheduler: Reschedulable) = new Runnable {
+  private def createTaskJob(client: MetricClient[S])(rescheduler: Reschedulable) = new Runnable {
     override def run(): Unit = {
-      reportCollectedMetricsAndRescheduleReporting(rescheduler.reschedule())
+      reportCollectedMetricsAndRescheduleReporting(client, rescheduler.reschedule())
     }
   }
 
-  private def reportCollectedMetricsAndRescheduleReporting(reschedule: => Unit) = {
+  private def reportCollectedMetricsAndRescheduleReporting(client: MetricClient[S], reschedule: => Unit) = {
     try {
-      reportCollectedMetrics() andThen {
+      reportCollectedMetrics(client) andThen {
         case Failure(ex) => logger.error("Reporting error:", ex)
       } andThen {
         case _ => reschedule
@@ -92,7 +89,8 @@ trait Reschedulable {
 
 private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecutorService,
                                                      createTask: Reschedulable => Runnable,
-                                                     delay: FiniteDuration)
+                                                     delay: FiniteDuration,
+                                                     client: MetricClient[_])
   extends StoppableReportingTask with Reschedulable with LazyLogging {
 
   private val task = createTask(this)
@@ -102,6 +100,7 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
   override def stop(): Unit = synchronized {
     stopped = true
     if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
+    client.stop()
     logger.info(s"Influxdb scheduled reporter was stopped!")
   }
 

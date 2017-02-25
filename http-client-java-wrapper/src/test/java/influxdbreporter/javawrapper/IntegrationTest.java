@@ -16,6 +16,8 @@
 package influxdbreporter.javawrapper;
 
 import influxdbreporter.ConnectionData;
+import influxdbreporter.core.MetricClient;
+import influxdbreporter.core.MetricClientFactory;
 import influxdbreporter.core.StoppableReportingTask;
 import influxdbreporter.core.Tag;
 import influxdbreporter.core.metrics.push.Timer;
@@ -47,9 +49,15 @@ public class IntegrationTest {
     }
 
     private InfluxdbReporter createTestReporter(MetricRegistry registry) {
-        influxdbreporter.HttpInfluxdbClient client = HttpInfluxdbClient.defaultHttpClient(
+        final influxdbreporter.HttpInfluxdbClient client = HttpInfluxdbClient.defaultHttpClient(
                 new ConnectionData("addr", 2000, "db", "user", "pass")
         );
-        return new InfluxdbReporter(registry, client, 10, TimeUnit.SECONDS);
+        MetricClientFactory<String> metricClientFactory = new MetricClientFactory<String>() {
+            @Override
+            public MetricClient<String> create() {
+                return client;
+            }
+        };
+        return new InfluxdbReporter(registry, metricClientFactory, 10, TimeUnit.SECONDS);
     }
 }

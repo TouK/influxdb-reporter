@@ -31,14 +31,14 @@ public class InfluxdbReporter {
 
 
     public InfluxdbReporter(MetricRegistry registry,
-                            MetricClient<String> client,
+                            MetricClientFactory<String> clientFactory,
                             long reportInterval,
                             TimeUnit reportIntervalUnit)  {
-        this(registry, client, reportInterval, reportIntervalUnit, 0);
+        this(registry, clientFactory, reportInterval, reportIntervalUnit, 0);
     }
 
     public InfluxdbReporter(MetricRegistry registry,
-                            MetricClient<String> client,
+                            MetricClientFactory<String> clientFactory,
                             long reportInterval,
                             TimeUnit reportIntervalUnit,
                             int bufferSize) {
@@ -46,7 +46,7 @@ public class InfluxdbReporter {
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
                 new LineProtocolWriter(List$.MODULE$.<Tag>empty()),
-                client,
+                clientFactory,
                 FiniteDuration.apply(reportInterval, reportIntervalUnit),
                 new InfluxBatcher<String>(),
                 new Some<>(dataBuffer),

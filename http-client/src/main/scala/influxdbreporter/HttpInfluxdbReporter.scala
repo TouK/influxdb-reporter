@@ -28,29 +28,36 @@ import scala.collection.JavaConverters._
 
 object HttpInfluxdbReporter {
 
-  def default(registry: MetricRegistry)(implicit executionContext: ExecutionContext): Reporter = {
+  def default(registry: MetricRegistry)(implicit executionContext: ExecutionContext): Try[Reporter] = {
     val config = ConfigFactory.load().getConfig("metrics")
     default(config, registry)
   }
 
   def default(config: Config, registry: MetricRegistry)
-             (implicit executionContext: ExecutionContext): Reporter = {
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
     // Can't use config.getDuration because of java 7 restriction
-    val interval = FiniteDuration(config.getLong("intervalSeconds"), TimeUnit.SECONDS)
-    implicit val timeout = interval - FiniteDuration(1, TimeUnit.SECONDS)
-    new InfluxdbReporter[String](
-      registry,
-      new LineProtocolWriter(getStaticTags(config)),
-      new HttpInfluxdbClient(ConnectionData(
-        config.getString("address"),
-        config.getInt("port"),
-        config.getString("db-name"),
-        config.getString("user"),
-        config.getString("password")
-      )),
-      interval,
-      new InfluxBatcher,
-      Try(config.getInt("unsent-buffer-size")).toOption.map(new FixedSizeWriterDataBuffer(_))
+    for {
+      interval <- Try(FiniteDuration(config.getDuration("interval").toMillis, TimeUnit.MILLISECONDS))
+      reporter <- parseConfig(config).map { connectionData =>
+        new InfluxdbReporter[String](
+          registry,
+          new LineProtocolWriter(getStaticTags(config)),
+          new HttpInfluxdbClientFactory(connectionData)(executionContext, (interval * 9) / 10),
+          interval,
+          new InfluxBatcher,
+          Try(config.getInt("unsent-buffer-size")).toOption.map(new FixedSizeWriterDataBuffer(_))
+        )
+      }
+    } yield reporter
+  }
+
+  private def parseConfig(config: Config) = Try {
+    ConnectionData(
+      config.getString("address"),
+      config.getInt("port"),
+      config.getString("db-name"),
+      config.getString("user"),
+      config.getString("password")
     )
   }
 

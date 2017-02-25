@@ -87,19 +87,22 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
 
     val w = new Waiter
 
-    val metricsClient = new MetricClient[String] {
-      override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
-        if (!areCorrect(data map (_.data))) {
-          w.dismiss()
+    val metricsClientFactory = new MetricClientFactory[String] {
+      override def create(): MetricClient[String] = new MetricClient[String] {
+        override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
+          if (!areCorrect(data map (_.data))) {
+            w.dismiss()
+          }
+          Future.successful(true)
         }
-        Future.successful(true)
+        override def stop(): Unit = {}
       }
     }
 
     val reporter = new InfluxdbReporter(
       metricsRegistry,
       new LineProtocolWriter(),
-      metricsClient,
+      metricsClientFactory,
       FiniteDuration(500, TimeUnit.MILLISECONDS)
     )
     reporter.start()
@@ -163,7 +166,7 @@ class MetricsStressTest extends WordSpec with ScalaFutures {
 
     def isCorrect: Boolean = usedCount.get() == collectedCount.get()
 
-    override def onCollect(metric: S) = collectedCount.set(usageCount(metric, collectedCount.get()))
+    override def onCollect(metric: S): Unit = collectedCount.set(usageCount(metric, collectedCount.get()))
   }
 
   private trait CollectListener[T <: CodahaleMetric] {

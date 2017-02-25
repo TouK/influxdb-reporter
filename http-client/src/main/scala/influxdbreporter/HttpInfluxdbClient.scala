@@ -16,17 +16,17 @@
 package influxdbreporter
 
 import com.typesafe.scalalogging.LazyLogging
-import influxdbreporter.core.MetricClient
+import influxdbreporter.core.{MetricClient, MetricClientFactory}
 import influxdbreporter.core.writers.WriterData
 import org.asynchttpclient._
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.language.postfixOps
 
 class HttpInfluxdbClient(connectionData: ConnectionData)
-                        (implicit executionContext: ExecutionContext, requestTimeout: FiniteDuration)
+                        (implicit executionContext: ExecutionContext, requestTimeout: Duration)
   extends MetricClient[String] with LazyLogging {
 
   private val MaxConnections = 5
@@ -41,23 +41,30 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
       .build()
     ))
 
-  private val influxdbWriteRequestBuilder = httpClient.underlying
-    .preparePost(s"http://${connectionData.address}:${connectionData.port}/write")
-    .addQueryParam("db", connectionData.dbName)
-    .addQueryParam("u", connectionData.user)
-    .addQueryParam("p", connectionData.password)
-
   override def sendData(writerData: List[WriterData[String]]): Future[Boolean] = {
-    val influxData = writerData map (_.data) mkString
-    val request = influxdbWriteRequestBuilder.setBody(influxData.getBytes(LoadEncoding)).build()
+    val request = createRequest(writerData map (_.data) mkString)
     logRequestResponse(request) {
       httpClient.send(request)
     } map isResponseSucceed
   }
 
+  override def stop(): Unit = {
+    if (!httpClient.underlying.isClosed) {
+      httpClient.underlying.close()
+    }
+  }
+
+  private def createRequest(body: String) =
+    httpClient.underlying
+      .preparePost(s"http://${connectionData.address}:${connectionData.port}/write")
+      .addQueryParam("db", connectionData.dbName)
+      .addQueryParam("u", connectionData.user)
+      .addQueryParam("p", connectionData.password)
+      .setBody(body.getBytes(LoadEncoding))
+      .build()
+
   private def logRequestResponse(request: Request): (Future[Response] => Future[Response]) = result => {
     def requestBodyToString(req: Request) = new String(req.getByteData, LoadEncoding)
-
     result onComplete {
       case Success(response) if isResponseSucceed(response) =>
         logger.debug(s"Data was sent and successfully written")
@@ -72,6 +79,14 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
   }
 
   private def isResponseSucceed(response: Response) = response.getStatusCode == InfluxSuccessStatusCode
+
+}
+
+class HttpInfluxdbClientFactory(connectionData: ConnectionData)
+                               (implicit executionContext: ExecutionContext, requestTimeout: FiniteDuration)
+  extends MetricClientFactory[String] {
+
+  override def create(): MetricClient[String] = new HttpInfluxdbClient(connectionData)
 }
 
 case class ConnectionData(address: String, port: Int, dbName: String, user: String, password: String)

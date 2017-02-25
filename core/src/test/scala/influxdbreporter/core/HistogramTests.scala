@@ -28,7 +28,7 @@ class HistogramTests extends BaseMetricTest {
     val registeredHistogram = registry.register("myhistogram", new Histogram())
 
     val mockWriter = createMockWriter(onPhaseChange(registeredHistogram), assertPhase)
-    val mockClient = createMockMetricClient(mockWriter)
+    val mockClient = createMockMetricClientFactory(mockWriter)
     val reporter = new InfluxdbReporter(registry, mockWriter, mockClient, FiniteDuration(1, TimeUnit.SECONDS))
     val task = reporter.start()
 

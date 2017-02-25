@@ -15,11 +15,13 @@
  */
 package influxdbreporter
 
+import java.io.Closeable
+
 import org.asynchttpclient.{AsyncCompletionHandler, AsyncHttpClient, Request, Response}
 
 import scala.concurrent.{Future, Promise}
 
-class AsyncHttpClientWrapper(val underlying: AsyncHttpClient) {
+class AsyncHttpClientWrapper(val underlying: AsyncHttpClient with Closeable) {
 
   def send(request: Request): Future[Response] = {
     val result = Promise[Response]()

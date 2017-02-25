@@ -30,9 +30,9 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
                                buffer: Option[WriterDataBuffer[S]],
                                clock: Clock)
                               (implicit ec: ExecutionContext)
-  extends Reporter with Reportable[S] with LazyLogging {
+  extends Reporter with LazyLogging {
 
-  protected def reportCollectedMetrics(): Future[List[BatchReportingResult[S]]] = {
+  protected def reportCollectedMetrics(client: MetricClient[S]): Future[List[BatchReportingResult[S]]] = {
     val collectedMetricsFuture = synchronized {
       collectMetrics(metricRegistry.getMetricsMap)
     }
@@ -41,7 +41,7 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
       notYetSendMetrics = collectedMetrics ::: notYetSentMetricsFromBuffer
       batches = batcher.partition(notYetSendMetrics)
       reported <- reportMetricBatchesSequentially(batches) {
-        reportMetrics
+        client.sendData
       }
       _ = updateNotSentMetricsBuffer(reported)
     } yield reported

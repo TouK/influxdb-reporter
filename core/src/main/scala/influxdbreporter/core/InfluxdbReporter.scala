@@ -24,19 +24,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class InfluxdbReporter[S](registry: MetricRegistry,
                           writer: Writer[S],
-                          client: MetricClient[S],
+                          clientFactory: MetricClientFactory[S],
                           interval: FiniteDuration,
                           batcher: Batcher[S] = new InfluxBatcher[S],
                           buffer: Option[WriterDataBuffer[S]] = None,
                           clock: Clock = UtcClock)
                          (implicit executionContext: ExecutionContext)
-  extends ScheduledReporter[S](registry, interval, writer, batcher, buffer, clock) {
+  extends ScheduledReporter[S](registry, interval, writer, clientFactory, batcher, buffer, clock) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
-    new InfluxdbReporter[S](registry, writer, client, newInterval, batcher, buffer, clock)
-
-  override protected def reportMetrics(collectedMetricsData: List[WriterData[S]]): Future[Boolean] = {
-    client.sendData(collectedMetricsData)
-  }
+    new InfluxdbReporter[S](registry, writer, clientFactory, newInterval, batcher, buffer, clock)
 
 }

@@ -22,8 +22,18 @@ import scala.concurrent.Future
 trait MetricClient[T] {
 
   def sendData(data: List[WriterData[T]]): Future[Boolean]
+  def stop(): Unit
+}
+
+trait MetricClientFactory[T] {
+  def create(): MetricClient[T]
 }
 
 class SkipSendingClient extends MetricClient[String] {
   override def sendData(data: List[WriterData[String]]): Future[Boolean] = Future.successful(true)
+  override def stop(): Unit = {}
+}
+
+object SkipSendingClientFactory extends MetricClientFactory[String] {
+  override def create(): MetricClient[String] = new SkipSendingClient
 }

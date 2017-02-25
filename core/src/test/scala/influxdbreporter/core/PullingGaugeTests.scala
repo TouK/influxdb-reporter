@@ -36,7 +36,7 @@ class PullingGaugeTests extends BaseMetricTest {
     }
 
     val mockWriter = createMockWriter(onPhaseChange(changeValue), assertPhase)
-    val mockClient = createMockMetricClient(mockWriter)
+    val mockClient = createMockMetricClientFactory(mockWriter)
     val reporter = new InfluxdbReporter(registry, mockWriter, mockClient, FiniteDuration(1, TimeUnit.SECONDS))
     val task = reporter.start()
 

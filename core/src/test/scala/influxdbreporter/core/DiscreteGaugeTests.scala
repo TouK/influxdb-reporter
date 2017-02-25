@@ -22,6 +22,7 @@ import influxdbreporter.core.writers.WriterData
 import org.scalatest.time.SpanSugar._
 
 import scala.concurrent.Future
+import scala.language.postfixOps
 
 class DiscreteGaugeTests extends BaseMetricTest with TestReporterProvider {
 
@@ -36,14 +37,17 @@ class DiscreteGaugeTests extends BaseMetricTest with TestReporterProvider {
       val registry = MetricRegistry("test")
       val tags = Tag("a", 1) :: Tag("b", 2) :: Tag("c", 3) :: Nil
       val gauge = registry.register("dg", new DiscreteGauge[Int])
-      val client = new MetricClient[String] {
-        override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
-          reportedValuesCount.addAndGet(data.length)
-          Future.successful(true)
+      val clientFactory = new MetricClientFactory[String] {
+        override def create(): MetricClient[String] = new MetricClient[String] {
+          override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
+            reportedValuesCount.addAndGet(data.length)
+            Future.successful(true)
+          }
+          override def stop(): Unit = {}
         }
       }
 
-      val reporter = createReporter(client, registry)
+      val reporter = createReporter(clientFactory, registry)
       reporter.start()
 
       val reportingTasks = (0 until 4).map { _ =>

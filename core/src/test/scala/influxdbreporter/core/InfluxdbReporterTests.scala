@@ -24,12 +24,13 @@ import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.SpanSugar._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.language.postfixOps
 import scala.util.Random
 
 class InfluxdbReporterTests extends WordSpec with TestReporterProvider with ScalaFutures {
 
-  implicit val executionContext = ExecutionContext.global
+  implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
 
   "Batch reportings should be invoking sequentially" in {
 
@@ -39,46 +40,49 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
     val counter = new AtomicInteger(0)
     val waiter = new Waiter
 
-    val metricsClient = new SendInvocationCountingMetricsClientDecorator(new SkipSendingClient) {
-      @volatile private var isSending = false
+    val metricsClientFactory = new MetricClientFactory[String] {
+      override def create(): MetricClient[String] =
+        new SendInvocationCountingMetricsClientDecorator(new SkipSendingClient) {
+          @volatile private var isSending = false
 
-      override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
-        val result = randomSendingResultWithConcurrencyChecks
-        super.sendData(data)
-        if(sendInvocationCount == 20) waiter.dismiss()
-        result
-      }
-
-      private def randomSendingResultWithConcurrencyChecks = {
-        synchronized {
-          if (isSending) waiter(fail("Concurrent sending"))
-          isSending = true
-        }
-        Thread sleep 50
-        val result = if (random.nextBoolean()) Future.successful(random.nextBoolean())
-        else Future.failed(new Exception("eg. timeout"))
-        result andThen { case _ =>
-          synchronized {
-            if (!isSending) waiter(fail("Concurrent sending"))
-            isSending = false
+          override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
+            val result = randomSendingResultWithConcurrencyChecks
+            super.sendData(data)
+            if (sendInvocationCount == 20) waiter.dismiss()
+            result
           }
-          counter.incrementAndGet()
+
+          private def randomSendingResultWithConcurrencyChecks = {
+            synchronized {
+              if (isSending) waiter(fail("Concurrent sending"))
+              isSending = true
+            }
+            Thread sleep 50
+            val result = if (random.nextBoolean()) Future.successful(random.nextBoolean())
+            else Future.failed(new Exception("eg. timeout"))
+            result andThen { case _ =>
+              synchronized {
+                if (!isSending) waiter(fail("Concurrent sending"))
+                isSending = false
+              }
+              counter.incrementAndGet()
+            }
+          }
         }
-      }
     }
 
     (0 to 100) foreach { idx =>
       val counter = metricsRegistry.register(s"mycounter-$idx", new Counter)
       counter.inc()
     }
-    val reporter = createReporter(metricsClient, metricsRegistry)
+    val reporter = createReporter(metricsClientFactory, metricsRegistry)
     reporter.start()
 
     waiter.await(timeout(6000 millis))
   }
 
   "Reporter cannot be started twice" in {
-    val reporter = createReporter(new SkipSendingClient)
+    val reporter = createReporter(SkipSendingClientFactory)
     reporter.start()
     intercept[ReporterAlreadyStartedException.type] {
       reporter.start()
@@ -86,7 +90,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
   }
 
   "Reporter can be started again only when previously started task was stopped" in {
-    val reporter = createReporter(new SkipSendingClient)
+    val reporter = createReporter(SkipSendingClientFactory)
     val task = reporter.start()
     task.stop()
     reporter.start()
@@ -95,32 +99,37 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
   "Not sent metrics measurements should be buffered when buffer is configured" in {
     val metricsRegistry = MetricRegistry("simple")
     val waiter = new Waiter
-    val metricsClient = new SendInvocationCountingMetricsClientDecorator(new SkipSendingClient) {
-      override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
-        val result: Future[Boolean] = sendInvocationCount match {
-          case 0 =>
-            if (data.length != 3) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
-            Future.successful(false)
-          case 1 =>
-            if (data.length != 4) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
-            Future.successful(true)
-          case 2 =>
-            if (data.length != 1) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
-            Future.successful(true)
-          case _ =>
-            waiter(fail("Should not happened"))
-            Future.failed(new Exception())
+    val metricsClientFactory = new MetricClientFactory[String] {
+      override def create(): MetricClient[String] =
+        new SendInvocationCountingMetricsClientDecorator(new SkipSendingClient) {
+          override def sendData(data: List[WriterData[String]]): Future[Boolean] = {
+            val result: Future[Boolean] = sendInvocationCount match {
+              case 0 =>
+                if (data.length != 3) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
+                Future.successful(false)
+              case 1 =>
+                if (data.length != 4) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
+                Future.successful(true)
+              case 2 =>
+                if (data.length != 1) waiter(fail(s"Wrong count of measurements (inv no: $sendInvocationCount)"))
+                Future.successful(true)
+              case _ =>
+                waiter(fail("Should not happened"))
+                Future.failed(new Exception())
+            }
+            super.sendData(data)
+            result
+          }
+
+          override def stop(): Unit = {}
         }
-        super.sendData(data)
-        result
-      }
     }
 
     val counter1 = metricsRegistry.register("c1", new Counter)
     val counter2 = metricsRegistry.register("c2", new Counter)
     val counter3 = metricsRegistry.register("c3", new Counter)
 
-    val reporter = createReporter(metricsClient, metricsRegistry, Some(new FixedSizeWriterDataBuffer(2)))
+    val reporter = createReporter(metricsClientFactory, metricsRegistry, Some(new FixedSizeWriterDataBuffer(2)))
     reporter.start()
 
     Future {
@@ -144,7 +153,6 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
     waiter.await(timeout(1900 millis))
   }
 
-
   private class SendInvocationCountingMetricsClientDecorator[T](metricClient: MetricClient[T])
                                                                (implicit executionContext: ExecutionContext)
     extends MetricClient[T] {
@@ -158,6 +166,8 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
     }
 
     def sendInvocationCount: Int = sendInvocationCounter
+
+    override def stop(): Unit = metricClient.stop()
   }
 
 }

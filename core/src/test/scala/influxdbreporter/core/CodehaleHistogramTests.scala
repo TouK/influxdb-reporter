@@ -29,8 +29,8 @@ class CodehaleHistogramTests extends BaseMetricTest {
     val registeredHistogram = registry.register("myhistogram", new CodahaleHistogram(new ExponentiallyDecayingReservoir))
 
     val mockWriter = createMockWriter(onPhaseChange(registeredHistogram), assertPhase)
-    val mockClient = createMockMetricClient(mockWriter)
-    val reporter = new InfluxdbReporter(registry, mockWriter, mockClient, FiniteDuration(1, TimeUnit.SECONDS))
+    val mockClientFactory = createMockMetricClientFactory(mockWriter)
+    val reporter = new InfluxdbReporter(registry, mockWriter, mockClientFactory, FiniteDuration(1, TimeUnit.SECONDS))
     val task = reporter.start()
 
     mockWriter.waitToPhaseThreeEnds()
