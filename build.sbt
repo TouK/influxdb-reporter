@@ -9,7 +9,7 @@ val commonSettings =
   licenseSettings ++
     Seq(
       organization := "pl.touk.influxdb-reporter",
-      javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
+      javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
       scalacOptions := Seq(
         "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
       ),
@@ -85,7 +85,7 @@ lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
   .settings(publishSettings)
   .settings(
     name := "influxdb-reporter-http-client-java-wrapper",
-    javacOptions in doc := Seq("-source", "1.7"),
+    javacOptions in doc := Seq("-source", "1.8"),
     libraryDependencies ++= {
       val findbugsV           = "3.0.1"
       val junitV              = "4.12"
@@ -103,7 +103,7 @@ lazy val hikariCPTracker = project.in(file("hikariCP-tracker"))
   .settings(publishSettings)
   .settings(
     name := "influxdb-reporter-hikariCP-tracker",
-    javacOptions in doc := Seq("-source", "1.7"),
+    javacOptions in doc := Seq("-source", "1.8"),
     libraryDependencies ++= {
       val hikariCPV           = "2.4.7"
 

@@ -35,29 +35,33 @@ object HttpInfluxdbReporter {
 
   def default(config: Config, registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    // Can't use config.getDuration because of java 7 restriction
-    for {
-      interval <- Try(FiniteDuration(config.getDuration("interval").toMillis, TimeUnit.MILLISECONDS))
-      reporter <- parseConfig(config).map { connectionData =>
-        new InfluxdbReporter[String](
-          registry,
-          new LineProtocolWriter(getStaticTags(config)),
-          new HttpInfluxdbClientFactory(connectionData)(executionContext, (interval * 9) / 10),
-          interval,
-          new InfluxBatcher,
-          Try(config.getInt("unsent-buffer-size")).toOption.map(new FixedSizeWriterDataBuffer(_))
-        )
-      }
-    } yield reporter
+    parseConfig(config).map(default(_, registry))
   }
 
-  private def parseConfig(config: Config) = Try {
-    ConnectionData(
-      config.getString("address"),
-      config.getInt("port"),
-      config.getString("db-name"),
-      config.getString("user"),
-      config.getString("password")
+  def default(config: InfluxDbReporterConfig, registry: MetricRegistry)
+             (implicit executionContext: ExecutionContext): Reporter = {
+    new InfluxdbReporter[String](
+      registry,
+      new LineProtocolWriter(config.staticTags),
+      new HttpInfluxdbClientFactory(config.connectionData)(executionContext, (config.reportInterval * 9) / 10),
+      config.reportInterval,
+      new InfluxBatcher,
+      config.unsetBufferSize.map(new FixedSizeWriterDataBuffer(_))
+    )
+  }
+
+  def parseConfig(config: Config): Try[InfluxDbReporterConfig] = Try {
+    InfluxDbReporterConfig(
+      ConnectionData(
+        config.getString("address"),
+        config.getInt("port"),
+        config.getString("db-name"),
+        config.getString("user"),
+        config.getString("password")
+      ),
+      FiniteDuration(config.getDuration("interval").toMillis, TimeUnit.MILLISECONDS),
+      Try(config.getInt("unsent-buffer-size")).toOption,
+      getStaticTags(config)
     )
   }
 
