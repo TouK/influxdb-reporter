@@ -23,7 +23,6 @@ import influxdbreporter.core.Tag
 import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.metrics.MetricByTag._
 import influxdbreporter.core.metrics.{Metric, MetricByTag, UniquenessTagAppender}
-import influxdbreporter.core.utils.UtcClock
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -32,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class DiscreteGauge[T](clock: Clock) extends Metric[CodahaleGauge[T]] with UniquenessTagAppender {
 
   // for java
-  def this() = this(UtcClock)
+  def this() = this(Clock.defaultClock())
 
   private val metricByTags = new AtomicReference(new ConcurrentLinkedQueue[MetricByTag[CodahaleGauge[T]]]())
 

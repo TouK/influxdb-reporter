@@ -16,11 +16,10 @@
 package influxdbreporter.core
 
 import com.codahale.metrics.Clock
-import influxdbreporter.core.utils.UtcClock
-import influxdbreporter.core.writers.{Writer, WriterData}
+import influxdbreporter.core.writers.Writer
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
 
 class InfluxdbReporter[S](registry: MetricRegistry,
                           writer: Writer[S],
@@ -28,7 +27,7 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           interval: FiniteDuration,
                           batcher: Batcher[S] = new InfluxBatcher[S],
                           buffer: Option[WriterDataBuffer[S]] = None,
-                          clock: Clock = UtcClock)
+                          clock: Clock = Clock.defaultClock())
                          (implicit executionContext: ExecutionContext)
   extends ScheduledReporter[S](registry, interval, writer, clientFactory, batcher, buffer, clock) {
 

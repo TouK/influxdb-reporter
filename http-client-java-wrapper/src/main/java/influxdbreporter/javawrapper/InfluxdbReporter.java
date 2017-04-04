@@ -15,8 +15,8 @@
  */
 package influxdbreporter.javawrapper;
 
+import com.codahale.metrics.Clock;
 import influxdbreporter.core.*;
-import influxdbreporter.core.utils.UtcClock$;
 import influxdbreporter.core.writers.LineProtocolWriter;
 import scala.Some;
 import scala.collection.immutable.List$;
@@ -50,7 +50,7 @@ public class InfluxdbReporter {
                 FiniteDuration.apply(reportInterval, reportIntervalUnit),
                 new InfluxBatcher<String>(),
                 new Some<>(dataBuffer),
-                UtcClock$.MODULE$,
+                Clock.defaultClock(),
                 ExecutionContext.Implicits$.MODULE$.global()
         );
     }
