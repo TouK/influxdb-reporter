@@ -34,9 +34,11 @@ sealed trait TimerContext {
   protected def stopWithTags(tags: Seq[Tag]): Unit
 }
 
-class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
+class Timer(clock: Clock) extends TagRelatedPushingMetric[CodahaleTimer] {
 
-  @varargs def time(tags: Tag*): TimerContext = new InfluxTimerContextImpl(tags.toList, this)
+  def this() = this(Clock.defaultClock())
+
+  @varargs def time(tags: Tag*): TimerContext = new InfluxTimerContextImpl(tags.toList, this, clock)
 
   @varargs def calculatedTime(time: Long, unit: TimeUnit, tags: Tag*): Unit = {
     increaseMetric(tags.toList, _.update(time, unit))
@@ -47,13 +49,12 @@ class Timer extends TagRelatedPushingMetric[CodahaleTimer] {
   private def notify(tags: List[Tag], time: Long): Unit =
     increaseMetric(tags, _.update(time, TimeUnit.NANOSECONDS))
 
-  private class InfluxTimerContextImpl(startingTags: List[Tag], listener: Timer)
+  private class InfluxTimerContextImpl(startingTags: List[Tag], listener: Timer, clock: Clock)
     extends TimerContext {
 
-    val clock = Clock.defaultClock
-    val startTime = clock.getTick
+    private val startTime: Long = clock.getTick
 
-    override protected def stopWithTags(tags: Seq[Tag]) = {
+    override protected def stopWithTags(tags: Seq[Tag]): Unit = {
       listener.notify(
         tags.toList ::: startingTags,
         clock.getTick - startTime

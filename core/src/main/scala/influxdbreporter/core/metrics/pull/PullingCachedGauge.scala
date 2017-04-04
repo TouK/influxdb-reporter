@@ -17,6 +17,7 @@ package influxdbreporter.core.metrics.pull
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import influxdbreporter.core.utils.ClockOpt.toClockOpt
 
 import com.codahale.metrics.Clock
 
@@ -27,7 +28,6 @@ abstract class PullingCachedGauge[V] protected (clock: Clock,
                                                 timeoutUnit: TimeUnit) extends PullingGauge[V] {
 
   private val reloadAt = new AtomicLong(0)
-
   private val timeoutNS = timeoutUnit.toNanos(timeout)
 
   @volatile private var valueFuture: Future[List[ValueByTag[V]]] = _
@@ -46,7 +46,7 @@ abstract class PullingCachedGauge[V] protected (clock: Clock,
   }
 
   private def shouldLoad(): Boolean = {
-    val time = clock.getTick
+    val time = clock.getTimeInNanos
     val current = reloadAt.get
     time > current && reloadAt.compareAndSet(current, time + timeoutNS)
   }

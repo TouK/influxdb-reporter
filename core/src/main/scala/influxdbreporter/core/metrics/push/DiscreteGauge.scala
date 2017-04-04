@@ -23,6 +23,7 @@ import influxdbreporter.core.Tag
 import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.metrics.MetricByTag._
 import influxdbreporter.core.metrics.{Metric, MetricByTag, UniquenessTagAppender}
+import influxdbreporter.core.utils.ClockOpt.toClockOpt
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -39,7 +40,7 @@ class DiscreteGauge[T](clock: Clock) extends Metric[CodahaleGauge[T]] with Uniqu
     val newMetric = new CodahaleGauge[T] {
       override def getValue: T = value
     }
-    metricByTags.get().add(MetricByTag(tags.toList, newMetric, Some(clock.getTick)))
+    metricByTags.get().add(MetricByTag(tags.toList, newMetric, Some(clock.getTimeInNanos)))
   }
 
   override def popMetrics(implicit ec: ExecutionContext): Future[MetricByTags[CodahaleGauge[T]]] = {

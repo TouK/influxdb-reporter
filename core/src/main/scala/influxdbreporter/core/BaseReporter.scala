@@ -21,6 +21,7 @@ import influxdbreporter.core.collectors.MetricCollector
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.writers.{Writer, WriterData}
+import influxdbreporter.core.utils.ClockOpt.toClockOpt
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -73,7 +74,7 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
   }
 
   private def collectMetrics[M <: CodahaleMetric](metrics: Map[String, (Metric[M], MetricCollector[M])]): Future[List[WriterData[S]]] = {
-    val timestamp = clock.getTick
+    val timestamp = clock.getTimeInNanos
     Future.sequence(metrics.toList.map {
       case (name, (metric, collector)) =>
         metric.popMetrics.map {
