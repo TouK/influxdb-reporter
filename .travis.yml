@@ -3,10 +3,13 @@ sudo: required
 language: scala
 
 scala:
-- 2.11.8
+- 2.12.2
 
 jdk:
 - oraclejdk8
+
+before_script:
+- sudo chmod +x /usr/local/bin/sbt
 
 after_success:
 - python <(curl -s https://raw.githubusercontent.com/TouK/sputnik-ci/master/sputnik-ci.py)
