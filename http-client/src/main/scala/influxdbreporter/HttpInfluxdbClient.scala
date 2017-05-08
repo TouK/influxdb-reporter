@@ -68,6 +68,7 @@ class HttpInfluxdbClient(connectionData: ConnectionData)
     result onComplete {
       case Success(response) if isResponseSucceed(response) =>
         logger.debug(s"Data was sent and successfully written")
+        logger.debug(s"Request body:\\n${requestBodyToString(request)}")
       case Success(response) =>
         logger.warn(s"Request: $request\nInfluxdb cannot handle request with metrics: status=[${response.getStatusCode}]")
         logger.debug(s"Request body:\\n${requestBodyToString(request)}")

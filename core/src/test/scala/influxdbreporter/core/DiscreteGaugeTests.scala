@@ -15,12 +15,15 @@
  */
 package influxdbreporter.core
 
+import java.time.Instant
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
+import com.codahale.metrics.Clock
 import influxdbreporter.core.metrics.push.DiscreteGauge
 import influxdbreporter.core.writers.WriterData
 import org.scalatest.time.SpanSugar._
 
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.language.postfixOps
 
@@ -43,6 +46,7 @@ class DiscreteGaugeTests extends BaseMetricTest with TestReporterProvider {
             reportedValuesCount.addAndGet(data.length)
             Future.successful(true)
           }
+
           override def stop(): Unit = {}
         }
       }
@@ -69,15 +73,29 @@ class DiscreteGaugeTests extends BaseMetricTest with TestReporterProvider {
 
     "add uniqueness ensuring tag for each gauge metric" in {
       val tags = Tag("a", 1) :: Tag("b", 2) :: Tag("c", 3) :: Nil
-      val gauge = new DiscreteGauge[Int]
+      val fakeClock = new Clock {
+        private val starting = Instant.now()
+        private val timestamps = mutable.Queue(
+          starting.toEpochMilli,
+          starting.toEpochMilli,
+          starting.toEpochMilli,
+          starting.plusMillis(100).toEpochMilli,
+          starting.plusMillis(101).toEpochMilli
+        )
+
+        override def getTick: Long = ???
+        override def getTime: Long =
+          timestamps.dequeue()
+      }
+      val gauge = new DiscreteGauge[Int](fakeClock)
       gauge.addValue(100, tags: _*)
       gauge.addValue(200, tags: _*)
+      gauge.addValue(300, tags.tail: _*)
+      gauge.addValue(50, tags.tail: _*)
       gauge.addValue(50, tags.tail: _*)
 
       whenReady(gauge.popMetrics, timeout(5 seconds)) { res =>
-        res.foreach(metricByTags =>
-          assert(metricByTags.tags.exists(_.key == "u"))
-        )
+        assert(res.flatMap(_.tags.filter(_.key == "u")).size == 3)
       }
     }
   }

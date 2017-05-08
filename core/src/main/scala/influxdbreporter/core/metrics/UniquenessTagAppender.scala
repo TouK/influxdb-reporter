@@ -24,9 +24,17 @@ import influxdbreporter.core.metrics.MetricByTag.MetricByTags
 protected trait UniquenessTagAppender {
 
   protected def mapListByAddingUniqueTagToEachMetric[U <: CodahaleMetric](metricByTags: MetricByTags[U]): MetricByTags[U] = {
-    metricByTags.zipWithIndex.map {
-      case (metricByTag, idx) =>
-        metricByTag.copy[U](tags = Tag("u", idx) :: metricByTag.tags)
-    }
+    metricByTags
+      .groupBy(_.timestamp)
+      .flatMap {
+        case (_, metricsByTag@(_ :: Nil)) =>
+          metricsByTag
+        case (_, metricsByTag) =>
+          metricsByTag.zipWithIndex.map {
+            case (metricByTag, idx) =>
+              metricByTag.copy[U](tags = Tag("u", idx) :: metricByTag.tags)
+          }
+      }
+      .toList
   }
 }
