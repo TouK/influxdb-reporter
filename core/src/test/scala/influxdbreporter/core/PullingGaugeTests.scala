@@ -27,10 +27,11 @@ class PullingGaugeTests extends BaseMetricTest {
     val registry = MetricRegistry("test")
     var valueByTag = ValueByTag(List.empty, -1)
 
-    val registeredCounter = registry.register("mygauge", new PullingGauge[Int] {
+    val registeredPullGauge = registry.register("mygauge", new PullingGauge[Int] {
       override def getValues(implicit ec: ExecutionContext): Future[List[ValueByTag[Int]]] =
         Future.successful(List(valueByTag))
     })
+
     def changeValue(tags: List[Tag], v: Int) = {
       valueByTag = ValueByTag(tags, v)
     }

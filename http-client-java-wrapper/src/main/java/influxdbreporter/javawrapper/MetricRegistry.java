@@ -25,59 +25,77 @@ import influxdbreporter.javawrapper.collectors.*;
 
 public class MetricRegistry {
 
-    final influxdbreporter.core.MetricRegistry scalaRegistry;
+  final influxdbreporter.core.MetricRegistry scalaRegistry;
 
-    public MetricRegistry(String prefix) {
-        scalaRegistry = MetricRegistry$.MODULE$.apply(prefix);
-    }
+  public MetricRegistry(String prefix) {
+    scalaRegistry = MetricRegistry$.MODULE$.apply(prefix);
+  }
 
-    public MetricRegistry(influxdbreporter.core.MetricRegistry scalaRegistry) {
-        this.scalaRegistry = scalaRegistry;
-    }
+  public MetricRegistry(influxdbreporter.core.MetricRegistry scalaRegistry) {
+    this.scalaRegistry = scalaRegistry;
+  }
 
-    public <U extends com.codahale.metrics.Metric, T extends Metric<U>> T register(final String name, final T metric) {
-        return scalaRegistry.register(
+  public <U extends com.codahale.metrics.Metric, T extends Metric<U>> T register(final String name, final T metric) {
+    return scalaRegistry.register(
+        name,
+        new RegisterMagnet<T>() {
+          @Override
+          public T register(String metricName, MetricRegistryImpl registryImpl) {
+            return registryImpl.registerMetricWithCollector(
                 name,
-                new RegisterMagnet<T>() {
-                    @Override
-                    public T apply(final String name, MetricRegistryImpl registryImpl) {
-                        return registryImpl.registerMetricWithCollector(
-                                name,
-                                metric,
-                                (influxdbreporter.core.collectors.MetricCollector<U>) metricCollectorOfMetric(metric)
-                        );
-                    }
-                });
-    }
+                metric,
+                (influxdbreporter.core.collectors.MetricCollector<U>) metricCollectorOfMetric(metric)
+            );
+          }
 
-    public <U extends com.codahale.metrics.Metric, T extends Metric<U>> T register(final String name,
-                                                                                   final T metric,
-                                                                                   final MetricCollector<U> collector) {
-        return scalaRegistry.register(
+          @Override
+          public T registerOrGetRegistered(String metricName, MetricRegistryImpl registryImpl) {
+            return registryImpl.registerMetricWithCollector(
                 name,
-                new RegisterMagnet<T>() {
-                    @Override
-                    public T apply(final String name, MetricRegistryImpl registryImpl) {
-                        return registryImpl.registerMetricWithCollector(
-                                name,
-                                metric,
-                                collector.convertToScalaCollector()
-                        );
-                    }
-                });
-    }
+                metric,
+                (influxdbreporter.core.collectors.MetricCollector<U>) metricCollectorOfMetric(metric)
+            );
+          }
+        });
+  }
 
-    public void unregister(String name) {
-        scalaRegistry.unregister(name);
-    }
+  public <U extends com.codahale.metrics.Metric, T extends Metric<U>> T register(final String name,
+                                                                                 final T metric,
+                                                                                 final MetricCollector<U> collector) {
+    return scalaRegistry.register(
+        name,
+        new RegisterMagnet<T>() {
+          @Override
+          public T register(String metricName, MetricRegistryImpl registryImpl) {
+            return registryImpl.registerMetricWithCollector(
+                name,
+                metric,
+                collector.convertToScalaCollector()
+            );
+          }
 
-    private influxdbreporter.core.collectors.MetricCollector<? extends com.codahale.metrics.Metric> metricCollectorOfMetric(Metric metric) {
-        if (metric instanceof Counter) return CounterCollector.COLLECTOR;
-        else if (metric instanceof Histogram) return HistogramCollector.COLLECTOR;
-        else if (metric instanceof Meter) return MeterCollector.COLLECTOR;
-        else if (metric instanceof Timer) return TimerCollector.COLLECTOR;
-        else if (metric instanceof DiscreteGauge) return GaugeCollector.collector();
-        else if (metric instanceof PullingGauge) return GaugeCollector.collector();
-        else throw new IllegalArgumentException("Unknown metric type: " + metric.getClass().getName());
-    }
+          @Override
+          public T registerOrGetRegistered(String metricName, MetricRegistryImpl registryImpl) {
+            return registryImpl.registerMetricWithCollector(
+                name,
+                metric,
+                collector.convertToScalaCollector()
+            );
+          }
+        });
+  }
+
+  public void unregister(String name) {
+    scalaRegistry.unregister(name);
+  }
+
+  private influxdbreporter.core.collectors.MetricCollector<? extends com.codahale.metrics.Metric> metricCollectorOfMetric(Metric metric) {
+    if (metric instanceof Counter) return CounterCollector.COLLECTOR;
+    else if (metric instanceof Histogram) return HistogramCollector.COLLECTOR;
+    else if (metric instanceof Meter) return MeterCollector.COLLECTOR;
+    else if (metric instanceof Timer) return TimerCollector.COLLECTOR;
+    else if (metric instanceof DiscreteGauge) return GaugeCollector.collector();
+    else if (metric instanceof PullingGauge) return GaugeCollector.collector();
+    else throw new IllegalArgumentException("Unknown metric type: " + metric.getClass().getName());
+  }
 }

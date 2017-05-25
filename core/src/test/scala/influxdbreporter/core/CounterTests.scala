@@ -25,7 +25,7 @@ class CounterTests extends BaseMetricTest {
 
   "An Counter metric integration test" in {
     val registry = MetricRegistry("test")
-    val registeredCounter = registry.register("mycounter", new Counter)
+    val registeredCounter = registry.registerOrGetRegistered("mycounter", new Counter)
 
     val mockWriter = createMockWriter(onPhaseChange(registeredCounter), assertPhase)
     val mockClient = createMockMetricClientFactory(mockWriter)
