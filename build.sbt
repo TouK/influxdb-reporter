@@ -3,11 +3,15 @@ import com.banno.license.Plugin.LicenseKeys._
 import com.banno.license.Licenses._
 import sbtrelease.Version
 
-crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2")
+val defaultScalaVersion = "2.12.3"
+val scalaVersions = Seq("2.11.11", defaultScalaVersion)
+enablePlugins(CrossPerProjectPlugin)
 
 val commonSettings =
   licenseSettings ++
     Seq(
+      crossScalaVersions := scalaVersions,
+      scalaVersion := defaultScalaVersion,
       organization := "pl.touk.influxdb-reporter",
       javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
       scalacOptions := Seq(
@@ -35,14 +39,10 @@ lazy val core = project.in(file("core"))
   .settings(commonSettings)
   .settings(
     name := "influxdb-reporter-core",
-    resolvers in ThisBuild ++= Seq(
-      "TouK repo releases"                   at "https://philanthropist.touk.pl/nexus/content/repositories/releases",
-      "TouK repo snapshots"                  at "https://philanthropist.touk.pl/nexus/content/repositories/snapshots"
-    ),
     libraryDependencies <++= scalaVersion { v =>
       val dropwizardMetricsV  = "3.1.2"
       val logbackV            = "1.1.2"
-      val scalaLoggingV       = "3.6.0-SNAPSHOT"
+      val scalaLoggingV       = "3.7.2"
       val scalaTestV          = "3.0.0"
       val mockitoV            = "2.2.13"
 
