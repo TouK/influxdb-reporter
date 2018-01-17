@@ -4,8 +4,11 @@ import com.banno.license.Licenses._
 import sbtrelease.Version
 
 val defaultScalaVersion = "2.12.3"
-val scalaVersions = Seq("2.11.11", defaultScalaVersion)
+val scalaVersions = Seq("2.11.12", defaultScalaVersion)
 enablePlugins(CrossPerProjectPlugin)
+
+val logbackV        = "1.2.3"
+val scalaTestV      = "3.0.4"
 
 val commonSettings =
   licenseSettings ++
@@ -40,11 +43,9 @@ lazy val core = project.in(file("core"))
   .settings(
     name := "influxdb-reporter-core",
     libraryDependencies <++= scalaVersion { v =>
-      val dropwizardMetricsV  = "3.1.2"
-      val logbackV            = "1.1.2"
+      val dropwizardMetricsV  = "4.0.2"
       val scalaLoggingV       = "3.7.2"
-      val scalaTestV          = "3.0.0"
-      val mockitoV            = "2.2.13"
+      val mockitoV            = "2.13.0"
 
       Seq(
         "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
@@ -62,11 +63,9 @@ lazy val httpClient = project.in(file("http-client"))
   .settings(
     name := "influxdb-reporter-http-client",
     libraryDependencies ++= {
-      val asyncHttpClientV    = "2.0.27"
-      val logbackV            = "1.1.2"
-      val scalaTestV          = "3.0.0"
-      val typesafeConfigV     = "1.3.0"
-      val wiremockV           = "2.5.1"
+      val asyncHttpClientV    = "2.1.2"
+      val typesafeConfigV     = "1.3.2"
+      val wiremockV           = "2.14.0"
 
       Seq(
         "com.typesafe"                 % "config"                       % typesafeConfigV,
@@ -91,8 +90,8 @@ lazy val httpClientJavaWrapper = project.in(file("http-client-java-wrapper"))
       val junitV              = "4.12"
 
       Seq(
-        "com.google.code.findbugs" % "jsr305" % findbugsV,
-        "junit"                    % "junit"  % junitV      % Test
+        "com.google.code.findbugs"    % "jsr305"                        % findbugsV,
+        "junit"                       % "junit"                         % junitV      % Test
       )
     }
   )
@@ -105,10 +104,10 @@ lazy val hikariCPTracker = project.in(file("hikariCP-tracker"))
     name := "influxdb-reporter-hikariCP-tracker",
     javacOptions in doc := Seq("-source", "1.8"),
     libraryDependencies ++= {
-      val hikariCPV           = "2.4.7"
+      val hikariCPV           = "2.7.6"
 
       Seq(
-        "com.zaxxer" % "HikariCP" % hikariCPV
+        "com.zaxxer"                  % "HikariCP"                      % hikariCPV
       )
     }
   )

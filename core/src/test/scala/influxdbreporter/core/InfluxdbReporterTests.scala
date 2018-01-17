@@ -32,8 +32,7 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
 
   implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
 
-  "Batch reportings should be invoking sequentially" in {
-
+  "Batch reports should be invoked sequentially" in {
     val metricsRegistry = MetricRegistry("simple")
     val random = new Random()
 
@@ -58,8 +57,9 @@ class InfluxdbReporterTests extends WordSpec with TestReporterProvider with Scal
               isSending = true
             }
             Thread sleep 50
-            val result = if (random.nextBoolean()) Future.successful(random.nextBoolean())
-            else Future.failed(new Exception("eg. timeout"))
+            val result =
+              if (random.nextBoolean()) Future.successful(random.nextBoolean())
+              else Future.failed(new Exception("eg. timeout"))
             result andThen { case _ =>
               synchronized {
                 if (!isSending) waiter(fail("Concurrent sending"))
