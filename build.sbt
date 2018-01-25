@@ -63,7 +63,7 @@ lazy val httpClient = project.in(file("http-client"))
   .settings(
     name := "influxdb-reporter-http-client",
     libraryDependencies ++= {
-      val asyncHttpClientV    = "2.1.2"
+      val asyncHttpClientV    = "2.2.0"
       val typesafeConfigV     = "1.3.2"
       val wiremockV           = "2.14.0"
 
