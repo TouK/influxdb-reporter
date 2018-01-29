@@ -3,7 +3,7 @@ import com.banno.license.Plugin.LicenseKeys._
 import com.banno.license.Licenses._
 import sbtrelease.Version
 
-val defaultScalaVersion = "2.12.3"
+val defaultScalaVersion = "2.12.4"
 val scalaVersions = Seq("2.11.12", defaultScalaVersion)
 enablePlugins(CrossPerProjectPlugin)
 
@@ -104,7 +104,7 @@ lazy val hikariCPTracker = project.in(file("hikariCP-tracker"))
     name := "influxdb-reporter-hikariCP-tracker",
     javacOptions in doc := Seq("-source", "1.8"),
     libraryDependencies ++= {
-      val hikariCPV           = "2.7.6"
+      val hikariCPV           = "2.5.1"
 
       Seq(
         "com.zaxxer"                  % "HikariCP"                      % hikariCPV
