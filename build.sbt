@@ -40,7 +40,7 @@ lazy val core = project.in(file("core"))
   .settings(
     name := "influxdb-reporter-core",
     libraryDependencies <++= scalaVersion { v =>
-      val dropwizardMetricsV  = "3.1.2"
+      val dropwizardMetricsV  = "3.2.2"
       val logbackV            = "1.1.2"
       val scalaLoggingV       = "3.7.2"
       val scalaTestV          = "3.0.0"
