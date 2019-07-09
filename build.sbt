@@ -26,6 +26,7 @@ val commonSettings =
       "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
     ),
     licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+    homepage := Some(url("https://github.com/touk/influxdb-reporter")),
     parallelExecution in Test := false
   )
 
@@ -41,7 +42,6 @@ val sonatypePublishSettings = Seq(
   },
   credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credential"),
   publishArtifact in Test := false,
-  publishArtifact in(Compile, packageDoc) := false,
   pomExtra in Global := {
     <scm>
       <connection>scm:git:github.com/touk/influxdb-reporter.git</connection>
