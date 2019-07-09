@@ -1,7 +1,7 @@
 import sbt.Keys._
 import sbtrelease.Version
 
-val defaultScalaVersion = "2.12.4"
+val defaultScalaVersion = "2.12.7"
 val scalaVersions = Seq("2.11.12", defaultScalaVersion)
 
 val asyncHttpClientV    = "2.4.8"
@@ -28,18 +28,6 @@ val commonSettings =
     licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
     parallelExecution in Test := false
   )
-
-val touKPublishSettings = Seq(
-  isSnapshot := version(Version(_).get.qualifier.exists(_ == "-SNAPSHOT")).value,
-  publishTo in ThisBuild := {
-    if (isSnapshot.value)
-      Some("Sonatype Nexus" at "https://nexus.touk.pl/nexus/content/repositories/snapshots")
-    else
-      Some("Sonatype Nexus" at "https://nexus.touk.pl/nexus/content/repositories/releases")
-  },
-  credentials += Credentials(Path.userHome / ".ivy2" / ".nexus_touk_pl_credentials"),
-  publishArtifact in(Compile, packageDoc) := false
-)
 
 val sonatypePublishSettings = Seq(
   isSnapshot := version(Version(_).get.qualifier.exists(_ == "-SNAPSHOT")).value,
@@ -68,6 +56,22 @@ val sonatypePublishSettings = Seq(
         </developer>
       </developers>
   }
+)
+
+import ReleaseTransformations._
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  releaseStepCommandAndRemaining("+publishSigned"),
+  setNextVersion,
+  commitNextVersion,
+  releaseStepCommand("sonatypeReleaseAll"),
+  pushChanges
 )
 
 lazy val core = project.in(file("core"))
