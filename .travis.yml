@@ -3,10 +3,10 @@ sudo: required
 language: scala
 
 scala:
-- 2.12.2
+- 2.12.7
 
 jdk:
-- oraclejdk8
+- openjdk8
 
 before_script:
 - sudo chmod +x /usr/local/bin/sbt
