@@ -4,16 +4,16 @@ import sbtrelease.Version
 val defaultScalaVersion = "2.12.7"
 val scalaVersions = Seq("2.11.12", defaultScalaVersion)
 
-val asyncHttpClientV    = "2.4.8"
+val asyncHttpClientV    = "2.9.0"
 val dropwizardMetricsV  = "4.0.2"
 val findbugsV           = "3.0.1"
 val hikariCPV           = "2.5.1"
 val junitV              = "4.12"
 val logbackV            = "1.2.3"
 val mockitoV            = "2.13.0"
-val scalaLoggingV       = "3.7.2"
+val scalaLoggingV       = "3.9.2"
 val scalaTestV          = "3.0.4"
-val typesafeConfigV     = "1.3.2"
+val typesafeConfigV     = "1.3.3"
 val wiremockV           = "2.14.0"
 
 val commonSettings =
