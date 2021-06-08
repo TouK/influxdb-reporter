@@ -27,15 +27,11 @@ import influxdbreporter.javawrapper.MetricRegistry;
 import influxdbreporter.core.metrics.push.Histogram;
 import influxdbreporter.core.metrics.push.Meter;
 import influxdbreporter.core.metrics.push.Timer;
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
-import scala.collection.immutable.Nil$;
-import scala.collection.mutable.Buffer;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
 import scala.concurrent.Future$;
-import scala.collection.JavaConversions.*;
-import scala.math.Integral;
 
 public final class InfluxdbReporterMetricsTracker extends MetricsTracker {
 
@@ -123,10 +119,10 @@ public final class InfluxdbReporterMetricsTracker extends MetricsTracker {
     }
 
     private Future<List<ValueByTag<Integer>>> convertToFutureOfValueByTagList(int value) {
-        List<Tag> emptyList = JavaConversions.asScalaBuffer(new java.util.ArrayList<Tag>()).toList();
+        List<Tag> emptyList = JavaConverters.asScalaBufferConverter(new java.util.ArrayList<Tag>()).asScala().toList();
         java.util.ArrayList<ValueByTag<Integer>> valueByTagArrayList = new java.util.ArrayList<>();
         valueByTagArrayList.add(new ValueByTag<>(emptyList,value));
-        List<ValueByTag<Integer>> valueByTagList = JavaConversions.asScalaBuffer(valueByTagArrayList).toList();
+        List<ValueByTag<Integer>> valueByTagList = JavaConverters.asScalaBufferConverter(valueByTagArrayList).asScala().toList();
         return Future$.MODULE$.successful(valueByTagList);
     }
 }

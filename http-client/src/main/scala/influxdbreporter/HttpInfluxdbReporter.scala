@@ -24,7 +24,7 @@ import influxdbreporter.core.writers.LineProtocolWriter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object HttpInfluxdbReporter {
 

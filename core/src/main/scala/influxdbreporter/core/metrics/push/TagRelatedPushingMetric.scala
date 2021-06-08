@@ -22,7 +22,7 @@ import influxdbreporter.core.metrics.Metric._
 import influxdbreporter.core.metrics.MetricByTag.{InfluxdbTags, MetricByTags}
 import influxdbreporter.core.metrics.{Metric, MetricByTag}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 // T must be thread safe

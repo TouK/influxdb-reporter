@@ -32,7 +32,7 @@ abstract class PullingCachedGauge[V] protected (clock: Clock,
 
   @volatile private var valueFuture: Future[List[ValueByTag[V]]] = _
 
-  protected def this(timeout: Long, timeoutUnit: TimeUnit) {
+  protected def this(timeout: Long, timeoutUnit: TimeUnit) = {
     this(Clock.defaultClock(), timeout, timeoutUnit)
   }
 

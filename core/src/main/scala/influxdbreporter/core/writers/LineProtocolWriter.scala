@@ -108,7 +108,7 @@ private object LineProtocolPartsFormatter {
     case v: Float => customDecimalFormat.format(value)
     case v: Int => s"${v}i"
     case v: Long => customDecimalFormat.format(value)
-    case v: BigDecimal => customDecimalFormat.format(v.doubleValue())
+    case v: BigDecimal => customDecimalFormat.format(v.doubleValue)
     case true => TrueString
     case false => FalseString
     case v => s"""\"${escape(v.toString, FieldValueEscapedCharacters)}\""""

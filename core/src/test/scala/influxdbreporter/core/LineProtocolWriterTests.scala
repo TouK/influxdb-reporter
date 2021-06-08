@@ -16,9 +16,10 @@
 package influxdbreporter.core
 
 import influxdbreporter.core.writers.{LineProtocolWriter, WriterData}
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class LineProtocolWriterTests extends WordSpec with Matchers {
+class LineProtocolWriterTests extends AnyWordSpec with Matchers {
 
   private val lineProtocolWriter = new LineProtocolWriter()
 
