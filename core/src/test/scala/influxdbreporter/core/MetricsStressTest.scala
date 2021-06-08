@@ -23,7 +23,7 @@ import influxdbreporter.core.metrics.Metric.{CodahaleCounter, CodahaleMeter, Cod
 import influxdbreporter.core.metrics.push.{Counter, Meter, Timer}
 import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.writers.{LineProtocolWriter, Writer, WriterData}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
@@ -32,7 +32,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class MetricsStressTest extends WordSpec with ScalaFutures {
+class MetricsStressTest extends AnyWordSpec with ScalaFutures {
 
   private val SINGLE_REPORT_REPETITION = 1000
   private val CONCURRENT_REPORTS_COUNT = 10

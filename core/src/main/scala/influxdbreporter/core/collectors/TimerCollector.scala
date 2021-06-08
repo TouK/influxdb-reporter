@@ -32,8 +32,8 @@ sealed class TimerCollector(timeUnit: TimeUnit,
     val snapshot = timer.getSnapshot
     Map(
       CountField -> snapshot.size,
-      MinField -> convertToOtherTimeUnit(snapshot.getMin, NANOSECONDS, timeUnit),
-      MaxField -> convertToOtherTimeUnit(snapshot.getMax, NANOSECONDS, timeUnit),
+      MinField -> convertToOtherTimeUnit(snapshot.getMin.toDouble, NANOSECONDS, timeUnit),
+      MaxField -> convertToOtherTimeUnit(snapshot.getMax.toDouble, NANOSECONDS, timeUnit),
       MeanField -> convertToOtherTimeUnit(snapshot.getMean, NANOSECONDS, timeUnit),
       StdDevField -> convertToOtherTimeUnit(snapshot.getStdDev, NANOSECONDS, timeUnit),
       Percentile50Field -> convertToOtherTimeUnit(snapshot.getMedian, NANOSECONDS, timeUnit),

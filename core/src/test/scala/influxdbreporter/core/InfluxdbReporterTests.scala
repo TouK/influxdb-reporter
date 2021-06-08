@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import influxdbreporter.core.metrics.push.Counter
 import influxdbreporter.core.writers.WriterData
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.SpanSugar._
@@ -28,7 +28,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 import scala.util.Random
 
-class InfluxdbReporterTests extends WordSpec with TestReporterProvider with ScalaFutures {
+class InfluxdbReporterTests extends AnyWordSpec with TestReporterProvider with ScalaFutures {
 
   implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
 

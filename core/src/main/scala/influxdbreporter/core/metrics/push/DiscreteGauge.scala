@@ -26,7 +26,7 @@ import influxdbreporter.core.metrics.{Metric, MetricByTag, UniquenessTagAppender
 import influxdbreporter.core.utils.ClockOpt.toClockOpt
 
 import scala.annotation.varargs
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 class DiscreteGauge[T](clock: Clock) extends Metric[CodahaleGauge[T]] with UniquenessTagAppender {

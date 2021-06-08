@@ -16,14 +16,14 @@
 package influxdbreporter.core
 
 import influxdbreporter.core.writers.{Writer, WriterData}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-abstract class BaseMetricTest extends WordSpec with ScalaFutures {
+abstract class BaseMetricTest extends AnyWordSpec with ScalaFutures {
 
   implicit val ex: ExecutionContextExecutor = ExecutionContext.global
 

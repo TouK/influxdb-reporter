@@ -24,7 +24,7 @@ import com.typesafe.scalalogging.LazyLogging
 import influxdbreporter.core.metrics.push.Counter
 import influxdbreporter.core.writers.{LineProtocolWriter, WriterData}
 import influxdbreporter.core.{MetricClientFactory, _}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.concurrent.Waiters.Waiter
 
@@ -32,7 +32,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 
-class HttpInfluxdbReporterTests extends WordSpec with ScalaFutures with LazyLogging {
+class HttpInfluxdbReporterTests extends AnyWordSpec with ScalaFutures with LazyLogging {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

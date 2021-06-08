@@ -15,6 +15,7 @@
  */
 package influxdbreporter.core
 
+import scala.collection.compat._
 import com.codahale.metrics.Clock
 import com.typesafe.scalalogging.LazyLogging
 import influxdbreporter.core.collectors.MetricCollector
@@ -59,9 +60,9 @@ abstract class BaseReporter[S](metricRegistry: MetricRegistry,
     buffer.map(_.update(notSentMetrics, sentMetrics))
   }
 
-  private def reportMetricBatchesSequentially[T](batches: TraversableOnce[List[WriterData[T]]])
+  private def reportMetricBatchesSequentially[T](batches: IterableOnce[List[WriterData[T]]])
                                                 (func: List[WriterData[T]] => Future[Boolean]): Future[List[BatchReportingResult[T]]] = {
-    batches.foldLeft(Future.successful[List[BatchReportingResult[T]]](Nil)) {
+    batches.iterator.foldLeft(Future.successful[List[BatchReportingResult[T]]](Nil)) {
       (acc, batch) => acc.flatMap { accList =>
         func(batch)
           .map(BatchReportingResult(batch, _) :: accList)
