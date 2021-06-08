@@ -75,6 +75,15 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
+lazy val root = (project in file("."))
+  .settings(name := "influx-reporter")
+  .settings(commonSettings)
+  .settings(
+    publish := {},
+    publishLocal := {}
+  )
+  .aggregate(core, httpClient, httpClientJavaWrapper, hikariCPTracker)
+
 lazy val core = project.in(file("core"))
   .settings(commonSettings)
   .settings(sonatypePublishSettings)

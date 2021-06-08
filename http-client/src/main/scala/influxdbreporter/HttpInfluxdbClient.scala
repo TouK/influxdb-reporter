@@ -90,4 +90,4 @@ class HttpInfluxdbClientFactory(connectionData: ConnectionData)
   override def create(): MetricClient[String] = new HttpInfluxdbClient(connectionData)
 }
 
-case class ConnectionData(address: String, port: Int, dbName: String, user: String, password: String)
+final case class ConnectionData(address: String, port: Int, dbName: String, user: String, password: String)
