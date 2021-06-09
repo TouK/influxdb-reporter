@@ -3,3 +3,28 @@
 
 # influxdb-reporter
 Reporter to Influxdb 0.9+ implementing (extended) Dropwizard metrics API 
+
+## Running tests
+
+$ sbt tests
+
+## Publishing 
+
+$ sbt release 
+
+### Required configuration
+
+1. File with Sonatype credentials `~/.sbt/sonatype_credential`:
+
+```
+realm=Sonatype Nexus Repository Manager
+host=oss.sonatype.org
+user=XXXXX
+password=YYYYY
+```
+
+1. File with GPG sbt plugin configuration `~/.sbt/1.0/gpg.sbt`:
+
+```
+usePgpKeyHex("XYXYXYXYXYX")
+```
