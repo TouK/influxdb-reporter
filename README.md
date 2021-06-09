@@ -14,13 +14,15 @@ $ sbt release
 
 ### Required configuration
 
-1. File with Sonatype credentials `~/.sbt/sonatype_credential`:
+1. File with Sonatype credentials `~/.sbt/1.0/sonatype.sbt`:
 
 ```
-realm=Sonatype Nexus Repository Manager
-host=oss.sonatype.org
-user=XXXXX
-password=YYYYY
+credentials += Credentials(
+        "Sonatype Nexus Repository Manager",
+        "oss.sonatype.org",
+        "XXXXXXX",
+        "YYYYY"
+)
 ```
 
 1. File with GPG sbt plugin configuration `~/.sbt/1.0/gpg.sbt`:

@@ -33,15 +33,15 @@ val commonSettings =
 
 val sonatypePublishSettings = Seq(
   isSnapshot := version(Version(_).get.qualifier.exists(_ == "-SNAPSHOT")).value,
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishMavenStyle := true,
   publishTo in ThisBuild := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
       Some("snapshots" at nexus + "content/repositories/snapshots")
     else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
+      sonatypePublishToBundle.value
   },
-  credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credential"),
   publishArtifact in Test := false,
   pomExtra in Global := {
     <scm>
