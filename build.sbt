@@ -21,7 +21,7 @@ val commonSettings =
   Seq(
     crossScalaVersions := scalaVersions,
     scalaVersion := defaultScalaVersion,
-    organization := "pl.touk.influxdb-reporter",
+    organization := "pl.touk",
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions := Seq(
       "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
@@ -43,7 +43,6 @@ val sonatypePublishSettings = Seq(
       sonatypePublishToBundle.value
   },
   publishArtifact in Test := false,
-  sonatypeProfileName in Global := "pl.touk",
   pomExtra in Global := {
     <scm>
       <connection>scm:git:github.com/touk/influxdb-reporter.git</connection>
