@@ -43,7 +43,7 @@ val sonatypePublishSettings = Seq(
       sonatypePublishToBundle.value
   },
   publishArtifact in Test := false,
-  sonatypeProfileName := "pl.touk",
+  sonatypeProfileName in Global := "pl.touk",
   pomExtra in Global := {
     <scm>
       <connection>scm:git:github.com/touk/influxdb-reporter.git</connection>
