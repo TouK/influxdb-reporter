@@ -28,17 +28,18 @@ import scala.jdk.CollectionConverters._
 
 object HttpInfluxdbReporter {
 
-  def default(registry: MetricRegistry)(implicit executionContext: ExecutionContext): Try[Reporter] = {
-    val config = ConfigFactory.load().getConfig("metrics")
-    default(config, registry)
-  }
-
-  def default(config: Config, registry: MetricRegistry)
+  def default(registry: MetricRegistry, name: Option[String])
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    parseConfig(config).map(default(_, registry))
+    val config = ConfigFactory.load().getConfig("metrics")
+    default(config, registry, name)
   }
 
-  def default(config: InfluxDbReporterConfig, registry: MetricRegistry)
+  def default(config: Config, registry: MetricRegistry, name: Option[String])
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
+    parseConfig(config).map(default(_, registry, name))
+  }
+
+  def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: Option[String])
              (implicit executionContext: ExecutionContext): Reporter = {
     new InfluxdbReporter[String](
       registry,
@@ -46,7 +47,8 @@ object HttpInfluxdbReporter {
       new HttpInfluxdbClientFactory(config.connectionData)(executionContext, (config.reportInterval * 9) / 10),
       config.reportInterval,
       new InfluxBatcher,
-      config.unsetBufferSize.map(new FixedSizeWriterDataBuffer(_))
+      config.unsetBufferSize.map(new FixedSizeWriterDataBuffer(_)),
+      name = name
     )
   }
 
