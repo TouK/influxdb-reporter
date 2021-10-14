@@ -27,11 +27,12 @@ class InfluxdbReporter[S](registry: MetricRegistry,
                           interval: FiniteDuration,
                           batcher: Batcher[S] = new InfluxBatcher[S],
                           buffer: Option[WriterDataBuffer[S]] = None,
-                          clock: Clock = Clock.defaultClock())
+                          clock: Clock = Clock.defaultClock(),
+                          name: Option[String] = None)
                          (implicit executionContext: ExecutionContext)
-  extends ScheduledReporter[S](registry, interval, writer, clientFactory, batcher, buffer, clock) {
+  extends ScheduledReporter[S](registry, interval, writer, clientFactory, batcher, buffer, clock, name) {
 
   def withInterval(newInterval: FiniteDuration): InfluxdbReporter[S] =
-    new InfluxdbReporter[S](registry, writer, clientFactory, newInterval, batcher, buffer, clock)
+    new InfluxdbReporter[S](registry, writer, clientFactory, newInterval, batcher, buffer, clock, name)
 
 }

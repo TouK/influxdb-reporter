@@ -28,25 +28,50 @@ import scala.jdk.CollectionConverters._
 
 object HttpInfluxdbReporter {
 
-  def default(registry: MetricRegistry)(implicit executionContext: ExecutionContext): Try[Reporter] = {
-    val config = ConfigFactory.load().getConfig("metrics")
-    default(config, registry)
+  def default(registry: MetricRegistry)
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
+    Try(ConfigFactory.load().getConfig("metrics"))
+      .flatMap(default(_, registry))
+  }
+
+  def default(registry: MetricRegistry, name: String)
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
+    Try(ConfigFactory.load().getConfig("metrics"))
+      .flatMap(default(_, registry, name))
   }
 
   def default(config: Config, registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    parseConfig(config).map(default(_, registry))
+    parseConfig(config)
+      .map(default(_, registry, None))
+  }
+
+  def default(config: Config, registry: MetricRegistry, name: String)
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
+    parseConfig(config)
+      .map(default(_, registry, Some(name)))
   }
 
   def default(config: InfluxDbReporterConfig, registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Reporter = {
+    default(config, registry, None)
+  }
+
+  def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: String)
+             (implicit executionContext: ExecutionContext): Reporter = {
+    default(config, registry, Some(name))
+  }
+
+  private def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: Option[String])
+                     (implicit executionContext: ExecutionContext): Reporter = {
     new InfluxdbReporter[String](
       registry,
       new LineProtocolWriter(config.staticTags),
       new HttpInfluxdbClientFactory(config.connectionData)(executionContext, (config.reportInterval * 9) / 10),
       config.reportInterval,
       new InfluxBatcher,
-      config.unsetBufferSize.map(new FixedSizeWriterDataBuffer(_))
+      config.unsetBufferSize.map(new FixedSizeWriterDataBuffer(_)),
+      name = name
     )
   }
 

@@ -23,7 +23,9 @@ import scala.collection.immutable.List$;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import scala.jdk.javaapi.OptionConverters;
 
 public class InfluxdbReporter {
 
@@ -34,14 +36,32 @@ public class InfluxdbReporter {
                             MetricClientFactory<String> clientFactory,
                             long reportInterval,
                             TimeUnit reportIntervalUnit)  {
-        this(registry, clientFactory, reportInterval, reportIntervalUnit, 0);
+        this(registry, clientFactory, reportInterval, reportIntervalUnit, 0, Optional.empty());
     }
 
     public InfluxdbReporter(MetricRegistry registry,
                             MetricClientFactory<String> clientFactory,
                             long reportInterval,
                             TimeUnit reportIntervalUnit,
-                            int bufferSize) {
+                            int bufferSize)  {
+        this(registry, clientFactory, reportInterval, reportIntervalUnit, bufferSize, Optional.empty());
+    }
+
+    public InfluxdbReporter(MetricRegistry registry,
+                            MetricClientFactory<String> clientFactory,
+                            long reportInterval,
+                            TimeUnit reportIntervalUnit,
+                            int bufferSize,
+                            String name) {
+        this(registry, clientFactory, reportInterval, reportIntervalUnit, bufferSize, Optional.of(name));
+    }
+
+    private InfluxdbReporter(MetricRegistry registry,
+                            MetricClientFactory<String> clientFactory,
+                            long reportInterval,
+                            TimeUnit reportIntervalUnit,
+                            int bufferSize,
+                            Optional<String> name) {
         WriterDataBuffer<String> dataBuffer = new FixedSizeWriterDataBuffer<>(bufferSize);
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
@@ -51,6 +71,7 @@ public class InfluxdbReporter {
                 new InfluxBatcher<String>(),
                 new Some<>(dataBuffer),
                 Clock.defaultClock(),
+                OptionConverters.toScala(name),
                 ExecutionContext.Implicits$.MODULE$.global()
         );
     }

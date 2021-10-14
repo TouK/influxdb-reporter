@@ -36,7 +36,8 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
                                     clientFactory: MetricClientFactory[S],
                                     batcher: Batcher[S],
                                     buffer: Option[WriterDataBuffer[S]],
-                                    clock: Clock)
+                                    clock: Clock,
+                                    name: Option[String] = None)
                                    (implicit executionContext: ExecutionContext)
   extends BaseReporter[S](metricRegistry, writer, batcher, buffer, clock) {
 
@@ -48,7 +49,7 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
       val client = clientFactory.create()
       val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob(client), interval, client)
       currentStoppableReportingTask = Some(stoppableTask)
-      logger.info(s"Influxdb scheduled reporter was started with $interval report interval")
+      logger.info(s"Influxdb scheduled reporter ${name.getOrElse("")} was started with $interval report interval")
       stoppableTask
     } else {
       throw ReporterAlreadyStartedException
