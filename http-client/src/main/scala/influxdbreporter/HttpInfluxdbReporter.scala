@@ -30,14 +30,14 @@ object HttpInfluxdbReporter {
 
   def default(registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    val config = Try(ConfigFactory.load().getConfig("metrics"))
-    config.flatMap(default(_, registry))
+    Try(ConfigFactory.load().getConfig("metrics"))
+      .flatMap(default(_, registry))
   }
 
   def default(registry: MetricRegistry, name: String)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    val config = Try(ConfigFactory.load().getConfig("metrics"))
-    config.flatMap(default(_, registry, name))
+    Try(ConfigFactory.load().getConfig("metrics"))
+      .flatMap(default(_, registry, name))
   }
 
   def default(config: Config, registry: MetricRegistry)
