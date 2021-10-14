@@ -30,23 +30,26 @@ object HttpInfluxdbReporter {
 
   def default(registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    default(registry, None)
+    val config = Try(ConfigFactory.load().getConfig("metrics"))
+    config.flatMap(default(_, registry))
   }
 
-  def default(registry: MetricRegistry, name: Option[String])
+  def default(registry: MetricRegistry, name: String)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    val config = ConfigFactory.load().getConfig("metrics")
-    default(config, registry, name)
+    val config = Try(ConfigFactory.load().getConfig("metrics"))
+    config.flatMap(default(_, registry, name))
   }
 
   def default(config: Config, registry: MetricRegistry)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    default(config, registry, None)
+    parseConfig(config)
+      .map(default(_, registry, None))
   }
 
-  def default(config: Config, registry: MetricRegistry, name: Option[String])
+  def default(config: Config, registry: MetricRegistry, name: String)
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
-    parseConfig(config).map(default(_, registry, name))
+    parseConfig(config)
+      .map(default(_, registry, Some(name)))
   }
 
   def default(config: InfluxDbReporterConfig, registry: MetricRegistry)
@@ -54,8 +57,13 @@ object HttpInfluxdbReporter {
     default(config, registry, None)
   }
 
-  def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: Option[String])
+  def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: String)
              (implicit executionContext: ExecutionContext): Reporter = {
+    default(config, registry, Some(name))
+  }
+
+  private def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: Option[String])
+                     (implicit executionContext: ExecutionContext): Reporter = {
     new InfluxdbReporter[String](
       registry,
       new LineProtocolWriter(config.staticTags),
