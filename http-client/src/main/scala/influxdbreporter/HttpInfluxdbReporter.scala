@@ -28,15 +28,30 @@ import scala.jdk.CollectionConverters._
 
 object HttpInfluxdbReporter {
 
+  def default(registry: MetricRegistry)
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
+    default(registry, None)
+  }
+
   def default(registry: MetricRegistry, name: Option[String])
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
     val config = ConfigFactory.load().getConfig("metrics")
     default(config, registry, name)
   }
 
+  def default(config: Config, registry: MetricRegistry)
+             (implicit executionContext: ExecutionContext): Try[Reporter] = {
+    default(config, registry, None)
+  }
+
   def default(config: Config, registry: MetricRegistry, name: Option[String])
              (implicit executionContext: ExecutionContext): Try[Reporter] = {
     parseConfig(config).map(default(_, registry, name))
+  }
+
+  def default(config: InfluxDbReporterConfig, registry: MetricRegistry)
+             (implicit executionContext: ExecutionContext): Reporter = {
+    default(config, registry, None)
   }
 
   def default(config: InfluxDbReporterConfig, registry: MetricRegistry, name: Option[String])
