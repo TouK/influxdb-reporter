@@ -18,6 +18,7 @@ package influxdbreporter.javawrapper;
 import com.codahale.metrics.Clock;
 import influxdbreporter.core.*;
 import influxdbreporter.core.writers.LineProtocolWriter;
+import scala.Option;
 import scala.Some;
 import scala.collection.immutable.List$;
 import scala.concurrent.ExecutionContext;
@@ -25,7 +26,6 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import scala.jdk.javaapi.OptionConverters;
 
 public class InfluxdbReporter {
 
@@ -63,6 +63,7 @@ public class InfluxdbReporter {
                             int bufferSize,
                             Optional<String> name) {
         WriterDataBuffer<String> dataBuffer = new FixedSizeWriterDataBuffer<>(bufferSize);
+
         reporter = new influxdbreporter.core.InfluxdbReporter<>(
                 registry.scalaRegistry,
                 new LineProtocolWriter(List$.MODULE$.<Tag>empty()),
@@ -71,7 +72,7 @@ public class InfluxdbReporter {
                 new InfluxBatcher<String>(),
                 new Some<>(dataBuffer),
                 Clock.defaultClock(),
-                OptionConverters.toScala(name),
+                name.isPresent() ? Option.empty() : Option.apply(name.get()),
                 ExecutionContext.Implicits$.MODULE$.global()
         );
     }
