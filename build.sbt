@@ -4,12 +4,13 @@ import sbtrelease.Version
 val defaultScalaVersion = "2.13.6"
 val scalaVersions = Seq("2.11.12", "2.12.13", defaultScalaVersion)
 
-val asyncHttpClientV    = "2.9.0"
+val asyncHttpClientV    = "2.12.3"
 val dropwizardMetricsV  = "4.0.2"
 val findbugsV           = "3.0.1"
 val hikariCPV           = "3.2.0"
 val junitV              = "4.12"
 val logbackV            = "1.2.3"
+val nettyV              = "4.1.75.Final"
 val scalaCompatV        = "2.4.4"
 val scalaLoggingV       = "3.9.2"
 val scalaTestV          = "3.2.9"
@@ -110,6 +111,19 @@ lazy val httpClient = project.in(file("http-client"))
       Seq(
         "com.typesafe"                 % "config"                       % typesafeConfigV,
         "org.asynchttpclient"          % "async-http-client"            % asyncHttpClientV,
+        // async-http-client 2.12.3 uses netty 4.1.60.Final, which has known security vulnerabilities,
+        // this project depends directly on netty 4.1.75.Final
+        "io.netty"                     % "netty-common"                 % nettyV,
+        "io.netty"                     % "netty-buffer"                 % nettyV,
+        "io.netty"                     % "netty-codec"                  % nettyV,
+        "io.netty"                     % "netty-codec-dns"              % nettyV,
+        "io.netty"                     % "netty-codec-http"             % nettyV,
+        "io.netty"                     % "netty-codec-socks"            % nettyV,
+        "io.netty"                     % "netty-handler"                % nettyV,
+        "io.netty"                     % "netty-handler-proxy"          % nettyV,
+        "io.netty"                     % "netty-resolver"               % nettyV,
+        "io.netty"                     % "netty-resolver-dns"           % nettyV,
+        "io.netty"                     % "netty-transport"              % nettyV,
 
         "ch.qos.logback"               % "logback-classic"              % logbackV              % Test,
         "org.scalatest"               %% "scalatest"                    % scalaTestV            % Test,
