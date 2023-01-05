@@ -72,7 +72,7 @@ public class InfluxdbReporter {
                 new InfluxBatcher<String>(),
                 new Some<>(dataBuffer),
                 Clock.defaultClock(),
-                name.isPresent() ? Option.empty() : Option.apply(name.get()),
+                name.isPresent() ? Option.apply(name.get()) : Option.empty(),
                 ExecutionContext.Implicits$.MODULE$.global()
         );
     }
