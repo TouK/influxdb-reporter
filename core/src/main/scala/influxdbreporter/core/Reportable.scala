@@ -15,18 +15,16 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
-
 import com.codahale.metrics.Clock
 import com.typesafe.scalalogging.LazyLogging
 import influxdbreporter.core.writers.Writer
 
-import scala.concurrent.ExecutionContext
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 trait Reporter {
-
   def start(): StoppableReportingTask
 }
 
@@ -47,7 +45,12 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
   override def start(): StoppableReportingTask = synchronized {
     if (currentStoppableReportingTask.forall(_.isStopped)) {
       val client = clientFactory.create()
-      val stoppableTask = new StoppableReportingTaskWithRescheduling(scheduler, createTaskJob(client), interval, client)
+      val stoppableTask = new StoppableReportingTaskWithRescheduling(
+        scheduler,
+        () => reportCollectedMetrics(client).map(_ => ()),
+        interval,
+        client
+      )
       currentStoppableReportingTask = Some(stoppableTask)
       logger.info(s"Influxdb scheduled reporter ${name.getOrElse("")} was started with $interval report interval")
       stoppableTask
@@ -56,25 +59,6 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
     }
   }
 
-  private def createTaskJob(client: MetricClient[S])(rescheduler: Reschedulable) = new Runnable {
-    override def run(): Unit = {
-      reportCollectedMetricsAndRescheduleReporting(client, rescheduler.reschedule())
-    }
-  }
-
-  private def reportCollectedMetricsAndRescheduleReporting(client: MetricClient[S], reschedule: => Unit) = {
-    try {
-      reportCollectedMetrics(client) andThen {
-        case Failure(ex) => logger.error("Reporting error:", ex)
-      } andThen {
-        case _ => reschedule
-      }
-    } catch {
-      case t: Throwable =>
-        logger.error("Collecting error:", t)
-        reschedule
-    }
-  }
 }
 
 case object ReporterAlreadyStartedException extends Exception("Reporter has been already started")
@@ -89,12 +73,13 @@ trait Reschedulable {
 }
 
 private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecutorService,
-                                                     createTask: Reschedulable => Runnable,
+                                                     reportMetrics: () => Future[Unit],
                                                      delay: FiniteDuration,
                                                      client: MetricClient[_])
+                                                    (implicit executionContext: ExecutionContext)
   extends StoppableReportingTask with Reschedulable with LazyLogging {
 
-  private val task = createTask(this)
+  private val task = createTask()
   private var stopped = false
   private var currentScheduledTask = scheduleNextTask()
 
@@ -115,4 +100,20 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
 
   private def scheduleNextTask() =
     scheduler.schedule(task, delay.toMillis, TimeUnit.MILLISECONDS)
+
+  private def createTask(): Runnable = new Runnable {
+    override def run(): Unit = {
+      try {
+        reportMetrics() andThen {
+          case Failure(ex) => logger.error("Reporting error:", ex)
+        } andThen {
+          case _ => reschedule()
+        }
+      } catch {
+        case t: Throwable =>
+          logger.error("Collecting error:", t)
+          reschedule()
+      }
+    }
+  }
 }
