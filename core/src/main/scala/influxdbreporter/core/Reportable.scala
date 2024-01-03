@@ -45,12 +45,11 @@ abstract class ScheduledReporter[S](metricRegistry: MetricRegistry,
   override def start(): StoppableReportingTask = synchronized {
     if (currentStoppableReportingTask.forall(_.isStopped)) {
       val client = clientFactory.create()
-      val stoppableTask = new StoppableReportingTaskWithRescheduling(
-        scheduler,
-        () => reportCollectedMetrics(client).map(_ => ()),
-        interval,
-        client
-      )
+      val metricsReporter = new MetricsReporter {
+        override def reportMetrics(): Future[Unit] = reportCollectedMetrics(client).map(_ => ())
+        override def stop(): Unit = client.stop()
+      }
+      val stoppableTask = new StoppableReportingTaskWithRescheduling(metricsReporter, scheduler, interval)
       currentStoppableReportingTask = Some(stoppableTask)
       logger.info(s"Influxdb scheduled reporter ${name.getOrElse("")} was started with $interval report interval")
       stoppableTask
@@ -72,12 +71,17 @@ trait Reschedulable {
   def reschedule(): Unit
 }
 
-private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecutorService,
-                                                     reportMetrics: () => Future[Unit],
-                                                     delay: FiniteDuration,
-                                                     client: MetricClient[_])
+private trait MetricsReporter {
+  def reportMetrics(): Future[Unit]
+
+  def stop(): Unit
+}
+
+private class StoppableReportingTaskWithRescheduling(metricsReporter: MetricsReporter,
+                                                     scheduler: ScheduledExecutorService,
+                                                     delay: FiniteDuration)
                                                     (implicit executionContext: ExecutionContext)
-  extends StoppableReportingTask with Reschedulable with LazyLogging {
+  extends StoppableReportingTask with LazyLogging {
 
   private val task = createTask()
   private var stopped = false
@@ -86,13 +90,13 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
   override def stop(): Unit = synchronized {
     stopped = true
     if (!currentScheduledTask.isCancelled) currentScheduledTask.cancel(false)
-    client.stop()
+    metricsReporter.stop()
     logger.info(s"Influxdb scheduled reporter was stopped!")
   }
 
   override def isStopped: Boolean = synchronized(stopped)
 
-  override def reschedule(): Unit = synchronized {
+  private def reschedule(): Unit = synchronized {
     if (!stopped) {
       currentScheduledTask = scheduleNextTask()
     }
@@ -104,7 +108,7 @@ private class StoppableReportingTaskWithRescheduling(scheduler: ScheduledExecuto
   private def createTask(): Runnable = new Runnable {
     override def run(): Unit = {
       try {
-        reportMetrics() andThen {
+        metricsReporter.reportMetrics() andThen {
           case Failure(ex) => logger.error("Reporting error:", ex)
         } andThen {
           case _ => reschedule()
