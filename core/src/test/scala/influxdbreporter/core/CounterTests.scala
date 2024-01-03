@@ -36,16 +36,16 @@ class CounterTests extends BaseMetricTest {
     task.stop()
   }
 
-  private val phaseOneTags = List(
+  private def phaseOneTags = List(
     Set(Tag("strength", 1)),
     Set(Tag("strength", 2)),
     Set(Tag("strength", 1), Tag("strength", 2)),
     Set(Tag("strength", 2))
   )
-  private val phaseTwoTags = List(
+  private def phaseTwoTags = List(
     Set(Tag("strength", 1))
   )
-  private val phaseThreeTags = List(
+  private def phaseThreeTags = List(
     Set(Tag("strength", 2), Tag("strength", 1)),
     Set(Tag("strength", 1), Tag("strength", 2))
   )
