@@ -2,7 +2,7 @@ import sbt.Keys._
 import sbtrelease.Version
 
 val defaultScalaVersion = "3.3.1"
-val scalaVersions = Seq("2.11.12", "2.12.13", "2.13.6", defaultScalaVersion)
+val scalaVersions = Seq("2.11.12", "2.12.18", "2.13.12", defaultScalaVersion)
 
 val asyncHttpClientV    = "2.12.3"
 val dropwizardMetricsV  = "4.0.2"
