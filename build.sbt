@@ -1,22 +1,22 @@
 import sbt.Keys._
 import sbtrelease.Version
 
-val defaultScalaVersion = "2.13.6"
-val scalaVersions = Seq("2.11.12", "2.12.13", defaultScalaVersion)
+val defaultScalaVersion = "3.3.1"
+val scalaVersions = Seq("2.11.12", "2.12.18", "2.13.12", defaultScalaVersion)
 
 val asyncHttpClientV    = "2.12.3"
 val dropwizardMetricsV  = "4.0.2"
 val findbugsV           = "3.0.1"
 val hikariCPV           = "3.2.0"
 val junitV              = "4.12"
-val logbackV            = "1.2.3"
-val nettyV              = "4.1.86.Final"
-val scalaCompatV        = "2.4.4"
-val scalaLoggingV       = "3.9.2"
-val scalaTestV          = "3.2.9"
-val scalaTestMockitoV   = "3.2.9.0"
-val typesafeConfigV     = "1.3.3"
-val wiremockV           = "2.26.0"
+val logbackV            = "1.2.11"
+val nettyV              = "4.1.104.Final"
+val scalaCompatV        = "2.11.0"
+val scalaLoggingV       = "3.9.5"
+val scalaTestV          = "3.2.17"
+val scalaTestMockitoV   = "3.2.10.0"
+val typesafeConfigV     = "1.4.3"
+val wiremockV           = "2.27.2"
 
 val commonSettings =
   Seq(
@@ -24,8 +24,9 @@ val commonSettings =
     scalaVersion := defaultScalaVersion,
     organization := "pl.touk",
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-    scalacOptions := Seq(
-      "-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"
+    scalacOptions := forScalaVersion(scalaVersion.value)(
+      forScala3 =  Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Ysafe-init", "-Xfatal-warnings", "-feature"),
+      forScala2 =  Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"),
     ),
     licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
     homepage := Some(url("https://github.com/touk/influxdb-reporter")),
@@ -161,3 +162,9 @@ lazy val hikariCPTracker = project.in(file("hikariCP-tracker"))
     }
   )
   .dependsOn(httpClientJavaWrapper)
+
+def forScalaVersion[T](scalaV: String)(forScala3: T, forScala2: T): T = CrossVersion.partialVersion(scalaV) match {
+  case Some((3, _)) => forScala3
+  case Some((2, _)) => forScala2
+  case _ => throw new Exception(s"Not supported Scala version $scalaV")
+}

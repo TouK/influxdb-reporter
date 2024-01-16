@@ -36,8 +36,8 @@ class HistogramTests extends BaseMetricTest {
     task.stop()
   }
 
-  private val tag1 = Tag("tag", 1)
-  private val tag2 = Tag("tag", 2)
+  private def tag1 = Tag("tag", 1)
+  private def tag2 = Tag("tag", 2)
 
   private def onPhaseChange(registeredHistogram: Histogram): PhaseChangeAction = {
     case PhaseOne =>

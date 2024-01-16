@@ -16,9 +16,7 @@
 package influxdbreporter.core.collectors
 
 import com.codahale.metrics.Gauge
-import influxdbreporter.core.metrics.Metric
-import Metric._
-import influxdbreporter.core.metrics.Metric
+import influxdbreporter.core.metrics.Metric._
 
 
 trait CollectorOps[T <: CodahaleMetric] {
@@ -31,7 +29,7 @@ object CollectorOps {
     override def collector: MetricCollector[CodahaleCounter] = CounterCollector()
   }
 
-  implicit def CollectorForGauge[T] = new CollectorOps[Gauge[T]] {
+  implicit def CollectorForGauge[T]: CollectorOps[CodahaleGauge[T]] = new CollectorOps[Gauge[T]] {
     override def collector: MetricCollector[Gauge[T]] = GaugeCollector[T]()
   }
 

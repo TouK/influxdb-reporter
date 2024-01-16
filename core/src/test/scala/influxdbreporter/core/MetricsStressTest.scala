@@ -15,21 +15,20 @@
  */
 package influxdbreporter.core
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-
 import influxdbreporter.core.collectors.{CounterCollector, MeterCollector, MetricCollector, SecondTimerCollector}
+import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.metrics.Metric.{CodahaleCounter, CodahaleMeter, CodahaleMetric, CodahaleTimer}
 import influxdbreporter.core.metrics.push.{Counter, Meter, Timer}
-import influxdbreporter.core.metrics.Metric
 import influxdbreporter.core.writers.{LineProtocolWriter, Writer, WriterData}
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.Waiters.Waiter
 import org.scalatest.time.{Seconds, Span}
+import org.scalatest.wordspec.AnyWordSpec
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Random
 
 class MetricsStressTest extends AnyWordSpec with ScalaFutures {
@@ -42,7 +41,7 @@ class MetricsStressTest extends AnyWordSpec with ScalaFutures {
 
   "A stress test for InfluxDbReporter" in {
 
-    implicit val executionContext = ExecutionContext.global
+    implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
 
     val metricsRegistry = MetricRegistry("stress")
 
@@ -58,7 +57,7 @@ class MetricsStressTest extends AnyWordSpec with ScalaFutures {
     val meterCollector = new CountableCollector[CodahaleMeter](MeterCollector())
     metricsRegistry.register("mymeter", (meter, meterCollector))
 
-    val metricContextList = List(
+    val metricContextList: List[MetricTestContext[_, _]] = List(
       new MetricTestContext[CodahaleCounter, Counter](counter, counterCollector) {
         override protected def updateMetric(metric: Counter, tags: List[Tag]): Unit = {
           metric.inc(tags: _*)
@@ -136,7 +135,7 @@ class MetricsStressTest extends AnyWordSpec with ScalaFutures {
   }
 
   private def areCorrect(data: List[String]): Boolean = data.forall(line =>
-    line.startsWith("stress.") && (line.filter(_ == ' ').length == 2)
+    line.startsWith("stress.") && (line.count(_ == ' ') == 2)
   )
 
   private abstract class MetricTestContext[S <: CodahaleMetric, T <: Metric[S]](metric: T, collector: CountableCollector[S])
