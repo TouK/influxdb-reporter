@@ -16,13 +16,13 @@
 package influxdbreporter.core
 
 import influxdbreporter.core.writers.WriterData
+import org.apache.commons.collections4.queue.CircularFifoQueue
 
-import scala.collection.immutable.List
-import scala.collection.mutable.ListBuffer
+import collection.JavaConverters._
 
 trait WriterDataBuffer[T] {
 
-  def update(add: List[WriterData[T]] = Nil, remove: List[WriterData[T]] = Nil): List[WriterData[T]]
+  def update(add: List[WriterData[T]] = Nil, remove: List[WriterData[T]] = Nil): Unit
 
   def get(): List[WriterData[T]]
 }
@@ -30,17 +30,15 @@ trait WriterDataBuffer[T] {
 class FixedSizeWriterDataBuffer[T](maxSize: Int)
   extends WriterDataBuffer[T] {
 
-  private var ringBuffer: ListBuffer[WriterData[T]] = ListBuffer.empty
+  private val buffer: CircularFifoQueue[WriterData[T]] = new CircularFifoQueue[WriterData[T]](maxSize)
 
-  override def update(add: List[WriterData[T]] = Nil, remove: List[WriterData[T]] = Nil): List[WriterData[T]] = {
-    if (add.nonEmpty || remove.nonEmpty) synchronized {
-      ringBuffer --= remove
-      add ++=: ringBuffer
-      ringBuffer = ringBuffer.distinct.take(maxSize)
+  override def update(add: List[WriterData[T]] = Nil, remove: List[WriterData[T]] = Nil): Unit = {
+    if(add.nonEmpty || remove.nonEmpty) {
+      buffer.removeAll(remove.asJava)
+      buffer.addAll(add.asJava)
     }
-    ringBuffer.toList
   }
 
-  override def get(): List[WriterData[T]] = ringBuffer.toList
+  override def get(): List[WriterData[T]] = buffer.asScala.toList
 
 }

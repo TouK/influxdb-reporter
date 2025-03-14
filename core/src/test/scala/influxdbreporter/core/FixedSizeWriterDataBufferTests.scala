@@ -30,23 +30,23 @@ class FixedSizeWriterDataBufferTests extends AnyWordSpec {
         buffer.get()
       }
 
-      assertResult(wd(4) :: wd(5) :: wd(1) :: wd(2) :: Nil) {
+      assertResult(wd(2) :: wd(3) :: wd(4) :: wd(5) :: Nil) {
         buffer.update(add = wd(4) :: wd(5) :: Nil)
         buffer.get()
       }
 
-      assertResult(wd(4) :: wd(5) :: wd(2) :: Nil) {
-        buffer.update(remove = wd(1) :: Nil)
+      assertResult(wd(3) :: wd(4) :: wd(5) :: Nil) {
+        buffer.update(remove = wd(2) :: Nil)
         buffer.get()
       }
 
-      assertResult(wd(6) :: wd(7) :: wd(4) :: wd(2) :: Nil) {
+      assertResult(wd(3) :: wd(4) :: wd(6) :: wd(7) :: Nil) {
         buffer.update(add = wd(6) :: wd(7) :: Nil, remove = wd(5) :: Nil)
         buffer.get()
       }
 
-      assertResult(wd(7) :: wd(4) :: Nil)  {
-        buffer.update(add = wd(7) :: Nil, remove = wd(6) :: wd(2) :: Nil)
+      assertResult(wd(3) :: wd(4) :: wd(7) :: wd(7) :: Nil) {
+        buffer.update(add = wd(7) :: Nil, remove = wd(6) :: Nil)
         buffer.get()
       }
     }
