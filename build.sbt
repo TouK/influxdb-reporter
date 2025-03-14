@@ -2,9 +2,10 @@ import sbt.Keys._
 import sbtrelease.Version
 
 val defaultScalaVersion = "3.3.1"
-val scalaVersions = Seq("2.11.12", "2.12.18", "2.13.12", defaultScalaVersion)
+val scalaVersions = Seq("2.12.18", "2.13.12", defaultScalaVersion)
 
 val asyncHttpClientV    = "2.12.3"
+val commonsCollectionsV = "4.4"
 val dropwizardMetricsV  = "4.0.2"
 val findbugsV           = "3.0.1"
 val hikariCPV           = "3.2.0"
@@ -25,8 +26,8 @@ val commonSettings =
     organization := "pl.touk",
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions := forScalaVersion(scalaVersion.value)(
-      forScala3 =  Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Ysafe-init", "-Xfatal-warnings", "-feature"),
-      forScala2 =  Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"),
+      forScala3 =  Seq("-unchecked", "-Wconf:cat=deprecation:s", "-encoding", "utf8", "-Ysafe-init", "-Xfatal-warnings", "-feature"),
+      forScala2 =  Seq("-unchecked", "-Wconf:cat=deprecation:s", "-encoding", "utf8", "-Xcheckinit", "-Xfatal-warnings", "-feature"),
     ),
     licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
     homepage := Some(url("https://github.com/touk/influxdb-reporter")),
@@ -96,6 +97,7 @@ lazy val core = project.in(file("core"))
         "io.dropwizard.metrics"        % "metrics-core"                 % dropwizardMetricsV,
         "org.scala-lang.modules"      %% "scala-collection-compat"      % scalaCompatV,
         "com.typesafe.scala-logging"  %% "scala-logging"                % scalaLoggingV,
+        "org.apache.commons"           % "commons-collections4"         % commonsCollectionsV,
 
         "ch.qos.logback"               % "logback-classic"              % logbackV              % Test,
         "org.scalatest"               %% "scalatest"                    % scalaTestV            % Test,
